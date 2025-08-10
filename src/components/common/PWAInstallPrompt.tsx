@@ -37,8 +37,11 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ onClose }) => {
     const isInstalled = (window.navigator as any).standalone || isStandalone;
     setIsInstalled(isInstalled);
 
+    console.log('PWA Install Prompt - App installed:', isInstalled);
+
     // Listen for the beforeinstallprompt event
     const handleBeforeInstallPrompt = (e: Event) => {
+      console.log('PWA Install Prompt - beforeinstallprompt event fired', e);
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       
@@ -46,6 +49,7 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ onClose }) => {
       if (!isInstalled) {
         // Show after a delay to not be intrusive
         setTimeout(() => {
+          console.log('PWA Install Prompt - Showing install prompt');
           setShowInstallPrompt(true);
         }, 3000);
       }
@@ -97,7 +101,35 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ onClose }) => {
   };
 
   // Don't show if already installed or no prompt available
-  if (isInstalled || !showInstallPrompt || !deferredPrompt) {
+  if (isInstalled) {
+    return (
+      <div className="fixed bottom-4 right-4 z-40">
+        <Badge variant="secondary" className="bg-green-100 text-green-800">
+          <CheckCircle className="w-3 h-3 mr-1" />
+          App Installed
+        </Badge>
+      </div>
+    );
+  }
+
+  // For debugging - show a manual install button if no automatic prompt
+  if (!showInstallPrompt && !deferredPrompt) {
+    return (
+      <div className="fixed bottom-4 right-4 z-40">
+        <Button 
+          onClick={() => setShowInstallPrompt(true)}
+          variant="outline"
+          size="sm"
+          className="bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100"
+        >
+          <Download className="w-4 h-4 mr-2" />
+          PWA Debug
+        </Button>
+      </div>
+    );
+  }
+
+  if (!showInstallPrompt) {
     return null;
   }
 

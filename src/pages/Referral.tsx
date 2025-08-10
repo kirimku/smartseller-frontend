@@ -276,14 +276,14 @@ export default function Referral() {
         <Gift className="h-12 w-12 text-primary mx-auto mb-3" />
         <h2 className="text-xl font-semibold mb-2">Share & Earn</h2>
         <p className="text-muted-foreground text-sm">
-          Share products with your referral code and earn 10% commission on every sale!
+          Share products with your affiliate code and earn 10% commission on every sale!
         </p>
       </div>
 
       <Card className="p-4">
         <div className="flex items-center gap-3 mb-3">
           <Users className="h-5 w-5 text-primary" />
-          <span className="font-medium">Your Referral Code</span>
+          <span className="font-medium">Your Affiliate Code</span>
         </div>
         <div className="flex gap-2">
           <Input value={referralCode} readOnly className="font-mono" />
