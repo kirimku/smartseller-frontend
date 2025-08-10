@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Warranty from "./pages/Warranty";
 import Referral from "./pages/Referral";
+import SpinWin from "./pages/SpinWin";
 
 const queryClient = new QueryClient();
 
@@ -20,6 +21,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/warranty" element={<Warranty />} />
           <Route path="/referral" element={<Referral />} />
+          <Route path="/spin-win" element={<SpinWin />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

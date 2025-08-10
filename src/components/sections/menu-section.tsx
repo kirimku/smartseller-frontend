@@ -12,7 +12,7 @@ const items: MenuItem[] = [
   { label: "Monthly Promo", to: "/promo", Icon: Percent },
   { label: "Referral", to: "/referral", Icon: Users },
   { label: "Warranty", to: "/warranty", Icon: ShieldCheck },
-  { label: "Spin & Win", to: "/spin", Icon: RotateCw },
+  { label: "Spin & Win", to: "/spin-win", Icon: RotateCw },
 ];
 
 export const MenuSection = () => {
