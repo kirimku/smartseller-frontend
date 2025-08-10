@@ -17,7 +17,13 @@ import {
   Gift,
   ExternalLink,
   Calendar,
-  CheckCircle
+  CheckCircle,
+  BarChart3,
+  Eye,
+  MousePointer,
+  Crown,
+  Target,
+  Award
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -48,6 +54,27 @@ type ReferralStats = {
   pendingEarnings: number;
   thisMonth: number;
   conversionRate: number;
+  totalClicks: number;
+  totalViews: number;
+  topProduct: string;
+  rank: string;
+};
+
+type SalesData = {
+  month: string;
+  sales: number;
+  earnings: number;
+  referrals: number;
+};
+
+type TrendingProduct = {
+  id: string;
+  name: string;
+  model: string;
+  sales: number;
+  commission: number;
+  trend: "up" | "down" | "stable";
+  image: string;
 };
 
 // Mock product data
@@ -99,7 +126,63 @@ const mockReferralStats: ReferralStats = {
   pendingEarnings: 450000,
   thisMonth: 680000,
   conversionRate: 12.5,
+  totalClicks: 1920,
+  totalViews: 8500,
+  topProduct: "Gaming Mechanical Keyboard REXUS MX5",
+  rank: "Gold Affiliate",
 };
+
+// Mock sales chart data
+const mockSalesData: SalesData[] = [
+  { month: "Jan", sales: 8, earnings: 720000, referrals: 8 },
+  { month: "Feb", sales: 12, earnings: 1080000, referrals: 12 },
+  { month: "Mar", sales: 15, earnings: 1350000, referrals: 15 },
+  { month: "Apr", sales: 18, earnings: 1620000, referrals: 18 },
+  { month: "May", sales: 22, earnings: 1980000, referrals: 22 },
+  { month: "Jun", sales: 28, earnings: 2520000, referrals: 28 },
+  { month: "Jul", sales: 24, earnings: 2160000, referrals: 24 },
+  { month: "Aug", sales: 10, earnings: 680000, referrals: 8 },
+];
+
+// Mock trending products
+const mockTrendingProducts: TrendingProduct[] = [
+  {
+    id: "1",
+    name: "Gaming Mechanical Keyboard",
+    model: "REXUS MX5",
+    sales: 15,
+    commission: 1348500,
+    trend: "up",
+    image: "/placeholder.svg",
+  },
+  {
+    id: "2",
+    name: "Gaming Mouse",
+    model: "REXUS GM7",
+    sales: 12,
+    commission: 540000,
+    trend: "up",
+    image: "/placeholder.svg",
+  },
+  {
+    id: "3",
+    name: "Gaming Headset",
+    model: "REXUS H3",
+    sales: 8,
+    commission: 520000,
+    trend: "stable",
+    image: "/placeholder.svg",
+  },
+  {
+    id: "4",
+    name: "Gaming Mousepad",
+    model: "REXUS P1",
+    sales: 5,
+    commission: 75000,
+    trend: "down",
+    image: "/placeholder.svg",
+  },
+];
 
 const mockTransactions: ReferralTransaction[] = [
   {
@@ -289,6 +372,7 @@ export default function Referral() {
 
   const renderAnalyticsTab = () => (
     <div className="space-y-6">
+      {/* Header Stats */}
       <div className="grid grid-cols-2 gap-4">
         <Card className="p-4">
           <div className="flex items-center gap-3">
@@ -315,6 +399,49 @@ export default function Referral() {
         </Card>
       </div>
 
+      {/* Performance Metrics */}
+      <div className="grid grid-cols-2 gap-4">
+        <Card className="p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-purple-100 rounded-lg">
+              <Eye className="h-5 w-5 text-purple-600" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Total Views</p>
+              <p className="text-xl font-bold">{mockReferralStats.totalViews.toLocaleString()}</p>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-orange-100 rounded-lg">
+              <MousePointer className="h-5 w-5 text-orange-600" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Total Clicks</p>
+              <p className="text-xl font-bold">{mockReferralStats.totalClicks.toLocaleString()}</p>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* Rank & Achievement */}
+      <Card className="p-4">
+        <div className="flex items-center gap-3 mb-3">
+          <Crown className="h-5 w-5 text-yellow-500" />
+          <span className="font-medium">Affiliate Rank</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-2xl font-bold text-yellow-500">{mockReferralStats.rank}</p>
+            <p className="text-sm text-muted-foreground">Keep up the great work!</p>
+          </div>
+          <Award className="h-8 w-8 text-yellow-500" />
+        </div>
+      </Card>
+
+      {/* Earnings Overview */}
       <div className="grid gap-4">
         <Card className="p-4">
           <div className="flex items-center gap-3 mb-3">
@@ -346,6 +473,81 @@ export default function Referral() {
           </p>
         </Card>
       </div>
+
+      {/* Sales Chart */}
+      <Card className="p-4">
+        <div className="flex items-center gap-3 mb-4">
+          <BarChart3 className="h-5 w-5 text-primary" />
+          <span className="font-medium">Sales Performance</span>
+        </div>
+        <div className="space-y-3">
+          <div className="grid grid-cols-4 gap-2 text-xs text-muted-foreground">
+            <span>Month</span>
+            <span>Sales</span>
+            <span>Referrals</span>
+            <span>Earnings</span>
+          </div>
+          {mockSalesData.slice(-6).map((data, index) => (
+            <div key={data.month} className="grid grid-cols-4 gap-2 items-center">
+              <span className="text-sm font-medium">{data.month}</span>
+              <span className="text-sm">{data.sales}</span>
+              <span className="text-sm">{data.referrals}</span>
+              <span className="text-sm font-semibold text-primary">
+                {formatCurrency(data.earnings)}
+              </span>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* Trending Products */}
+      <Card className="p-4">
+        <div className="flex items-center gap-3 mb-4">
+          <Target className="h-5 w-5 text-primary" />
+          <span className="font-medium">Top Performing Products</span>
+        </div>
+        <div className="space-y-3">
+          {mockTrendingProducts.map((product, index) => (
+            <div key={product.id} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold text-muted-foreground">#{index + 1}</span>
+                <img
+                  src={product.image}
+                  alt={product.name}
+                  className="w-8 h-8 object-cover rounded bg-muted flex-shrink-0"
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="text-sm font-medium truncate">{product.name}</h4>
+                <p className="text-xs text-muted-foreground">{product.model}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm font-semibold">{product.sales} sales</p>
+                <p className="text-xs text-primary">{formatCurrency(product.commission)}</p>
+              </div>
+              <div className="flex-shrink-0">
+                {product.trend === "up" && <TrendingUp className="h-4 w-4 text-green-500" />}
+                {product.trend === "down" && <TrendingUp className="h-4 w-4 text-red-500 rotate-180" />}
+                {product.trend === "stable" && <div className="w-4 h-4 bg-gray-400 rounded-full" />}
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* Top Product Highlight */}
+      <Card className="p-4 bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
+        <div className="flex items-center gap-3 mb-3">
+          <Crown className="h-5 w-5 text-primary" />
+          <span className="font-medium">Top Selling Product</span>
+        </div>
+        <div className="text-center">
+          <h3 className="text-lg font-bold text-primary mb-1">{mockReferralStats.topProduct}</h3>
+          <p className="text-sm text-muted-foreground">
+            Your best performing product this month
+          </p>
+        </div>
+      </Card>
     </div>
   );
 
