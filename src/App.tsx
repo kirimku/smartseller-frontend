@@ -21,6 +21,7 @@ import WarrantyProgram from "./pages/WarrantyProgram";
 import AdminAffiliate from "./pages/AdminAffiliate";
 import LoyaltyRewards from "./pages/LoyaltyRewards";
 import WarehouseManagement from "./pages/WarehouseManagement";
+import ProductDetail from "./pages/ProductDetail";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +36,7 @@ const App = () => (
           <Route path="/warranty" element={<Warranty />} />
           <Route path="/referral" element={<Referral />} />
           <Route path="/spin-win" element={<SpinWin />} />
+          <Route path="/product/:productId" element={<ProductDetail />} />
           
           {/* Admin Routes */}
           <Route path="/admin/login" element={<AdminLogin />} />

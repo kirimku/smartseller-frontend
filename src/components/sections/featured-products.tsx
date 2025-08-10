@@ -6,6 +6,7 @@ import gamingKeyboard from "@/assets/gaming-keyboard.jpg";
 import gamingHeadset from "@/assets/gaming-headset.jpg";
 import { ShoppingCart, Star, ChevronLeft, ChevronRight } from "lucide-react";
 import { useRef } from "react";
+import { useNavigate } from "react-router-dom";
 
 const products = [
   {
@@ -57,6 +58,7 @@ const products = [
 
 export const FeaturedProducts = () => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   const scrollLeft = () => {
     if (scrollContainerRef.current) {
@@ -103,7 +105,11 @@ export const FeaturedProducts = () => {
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         {products.map((product) => (
-          <Card key={product.id} className="shadow-card flex-shrink-0 w-48">
+          <Card 
+            key={product.id} 
+            className="shadow-card flex-shrink-0 w-48 cursor-pointer hover:shadow-lg transition-shadow"
+            onClick={() => navigate(`/product/${product.id}`)}
+          >
             <div className="p-4">
               <div className="space-y-3">
                 <div className="relative w-full h-32 rounded-lg overflow-hidden bg-muted">
