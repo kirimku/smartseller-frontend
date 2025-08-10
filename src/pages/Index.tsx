@@ -6,6 +6,7 @@ import { MenuSection } from "@/components/sections/menu-section";
 import { FeaturedProducts } from "@/components/sections/featured-products";
 import { RewardsSection } from "@/components/sections/rewards-section";
 import { TopBanner } from "@/components/common/TopBanner";
+import { Header } from "@/components/common/Header";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("home");
@@ -54,6 +55,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Header />
       <TopBanner />
       {renderContent()}
       <MobileNav activeTab={activeTab} onTabChange={setActiveTab} />

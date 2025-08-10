@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MobileNav } from "@/components/ui/mobile-nav";
+import { Header } from "@/components/common/Header";
 import { 
   QrCode, 
   Search, 
@@ -20,7 +21,7 @@ import {
   Upload,
   Truck
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 type WarrantyProduct = {
   id: string;
@@ -121,6 +122,7 @@ const mockWarrantyHistory: WarrantyProduct[] = [
 type WarrantyStep = "lookup" | "details" | "claim-form" | "submitted" | "status-detail";
 
 export default function Warranty() {
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState<WarrantyStep>("lookup");
   const [warrantyId, setWarrantyId] = useState("");
   const [product, setProduct] = useState<WarrantyProduct | null>(null);
@@ -140,6 +142,24 @@ export default function Warranty() {
   });
 
   const [activeTab, setActiveTab] = useState("home");
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    switch (tab) {
+      case "home":
+        navigate("/");
+        break;
+      case "rewards":
+        // Navigate to rewards page when implemented
+        break;
+      case "shop":
+        // Navigate to shop page when implemented
+        break;
+      case "profile":
+        // Navigate to profile page when implemented
+        break;
+    }
+  };
 
   const handleLookup = () => {
     setError("");
@@ -201,7 +221,7 @@ export default function Warranty() {
     <div className="space-y-6">
       <div className="text-center">
         <ShieldCheck className="h-16 w-16 text-primary mx-auto mb-4" />
-        <h1 className="text-2xl font-bold mb-2">Rexus Warranty</h1>
+        <h1 className="text-2xl font-bold mb-2">Warranty Lookup</h1>
         <p className="text-muted-foreground">
           Enter your warranty ID or scan the QR code on your product
         </p>
@@ -694,6 +714,7 @@ export default function Warranty() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
+      <Header title="Warranty" />
       <div className="container max-w-2xl mx-auto px-6 py-8">
         {currentStep === "lookup" && renderLookupStep()}
         {currentStep === "status-detail" && renderStatusDetailStep()}
@@ -701,7 +722,7 @@ export default function Warranty() {
         {currentStep === "claim-form" && renderClaimForm()}
         {currentStep === "submitted" && renderSubmittedStep()}
       </div>
-      <MobileNav activeTab={activeTab} onTabChange={setActiveTab} />
+      <MobileNav activeTab={activeTab} onTabChange={handleTabChange} />
     </div>
   );
 }
