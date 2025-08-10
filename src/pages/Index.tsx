@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { MobileNav } from "@/components/ui/mobile-nav";
 import { HeroSection } from "@/components/sections/hero-section";
 import { StatsSection } from "@/components/sections/stats-section";
@@ -11,6 +12,15 @@ import { Header } from "@/components/common/Header";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("home");
+  const navigate = useNavigate();
+
+  const handleTabChange = (tab: string) => {
+    if (tab === "profile") {
+      navigate("/profile");
+    } else {
+      setActiveTab(tab);
+    }
+  };
 
   const renderContent = () => {
     switch (activeTab) {
@@ -37,13 +47,6 @@ const Index = () => {
             <FeaturedProducts />
           </div>
         );
-      case "profile":
-        return (
-          <div className="pt-6 px-6 pb-24">
-            <h2 className="text-xl font-bold mb-4">Profile</h2>
-            <p className="text-muted-foreground">Profile section coming soon...</p>
-          </div>
-        );
       default:
         return (
           <div className="pb-24">
@@ -62,7 +65,7 @@ const Index = () => {
       <Header />
       <TopBanner />
       {renderContent()}
-      <MobileNav activeTab={activeTab} onTabChange={setActiveTab} />
+      <MobileNav activeTab={activeTab} onTabChange={handleTabChange} />
     </div>
   );
 };

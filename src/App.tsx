@@ -24,6 +24,8 @@ import WarehouseManagement from "./pages/WarehouseManagement";
 import ProductDetail from "./pages/ProductDetail";
 import RedeemPage from "./pages/RedeemPage";
 import RedemptionSuccess from "./pages/RedemptionSuccess";
+import Profile from "./pages/Profile";
+import MyOrders from "./pages/MyOrders";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +43,8 @@ const App = () => (
           <Route path="/product/:productId" element={<ProductDetail />} />
           <Route path="/redeem/:productId" element={<RedeemPage />} />
           <Route path="/redemption-success" element={<RedemptionSuccess />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/my-orders" element={<MyOrders />} />
           
           {/* Admin Routes */}
           <Route path="/admin/login" element={<AdminLogin />} />
