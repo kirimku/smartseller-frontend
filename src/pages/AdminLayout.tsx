@@ -25,7 +25,8 @@ import {
   Calendar,
   MessageSquare,
   Route,
-  Globe
+  Globe,
+  Share2
 } from "lucide-react";
 
 const sidebarItems = [
@@ -70,6 +71,12 @@ const sidebarItems = [
     icon: Shield,
     href: "/admin/warranty",
     badge: "5"
+  },
+  {
+    title: "Affiliate Program",
+    icon: Share2,
+    href: "/admin/affiliate",
+    badge: "12"
   },
   {
     title: "Analytics",
@@ -214,6 +221,7 @@ export default function AdminLayout() {
                  location.pathname === "/admin/tracking" ? "Tracking & Delivery" :
                  location.pathname === "/admin/marketplace" ? "Marketplace Integration" :
                  location.pathname === "/admin/warranty" ? "Warranty Program" :
+                 location.pathname === "/admin/affiliate" ? "Affiliate Program" :
                  location.pathname === "/admin/analytics" ? "Analytics" :
                  "Admin Panel"}
               </h1>

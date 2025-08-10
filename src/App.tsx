@@ -18,6 +18,7 @@ import CreateOrder from "./pages/CreateOrder";
 import TrackingStatus from "./pages/TrackingStatus";
 import MarketplaceIntegration from "./pages/MarketplaceIntegration";
 import WarrantyProgram from "./pages/WarrantyProgram";
+import AdminAffiliate from "./pages/AdminAffiliate";
 
 const queryClient = new QueryClient();
 
@@ -44,6 +45,7 @@ const App = () => (
             <Route path="tracking" element={<TrackingStatus />} />
             <Route path="marketplace" element={<MarketplaceIntegration />} />
             <Route path="warranty" element={<WarrantyProgram />} />
+            <Route path="affiliate" element={<AdminAffiliate />} />
           </Route>
           
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
