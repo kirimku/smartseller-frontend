@@ -22,6 +22,8 @@ import AdminAffiliate from "./pages/AdminAffiliate";
 import LoyaltyRewards from "./pages/LoyaltyRewards";
 import WarehouseManagement from "./pages/WarehouseManagement";
 import ProductDetail from "./pages/ProductDetail";
+import RedeemPage from "./pages/RedeemPage";
+import RedemptionSuccess from "./pages/RedemptionSuccess";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +39,8 @@ const App = () => (
           <Route path="/referral" element={<Referral />} />
           <Route path="/spin-win" element={<SpinWin />} />
           <Route path="/product/:productId" element={<ProductDetail />} />
+          <Route path="/redeem/:productId" element={<RedeemPage />} />
+          <Route path="/redemption-success" element={<RedemptionSuccess />} />
           
           {/* Admin Routes */}
           <Route path="/admin/login" element={<AdminLogin />} />

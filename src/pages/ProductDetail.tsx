@@ -217,8 +217,15 @@ const ProductDetail: React.FC = () => {
   };
 
   const handleRedeemPoints = () => {
-    // Points redemption logic
-    console.log('Redeem with points:', { productId: product.id, points: product.pointsPrice });
+    // Navigate to redemption page with product info
+    navigate(`/redeem/${productId}`, { 
+      state: { 
+        product,
+        quantity,
+        selectedColor,
+        totalPoints: product.pointsPrice * quantity
+      }
+    });
   };
 
   return (
