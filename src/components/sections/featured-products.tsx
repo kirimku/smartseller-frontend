@@ -4,7 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import gamingMouse from "@/assets/gaming-mouse.jpg";
 import gamingKeyboard from "@/assets/gaming-keyboard.jpg";
 import gamingHeadset from "@/assets/gaming-headset.jpg";
-import { ShoppingCart, Star } from "lucide-react";
+import { ShoppingCart, Star, ChevronLeft, ChevronRight } from "lucide-react";
+import { useRef } from "react";
 
 const products = [
   {
@@ -34,24 +35,78 @@ const products = [
     discount: "25% OFF",
     rating: 4.7,
   },
+  {
+    id: 4,
+    name: "Gaming Mousepad",
+    image: gamingMouse,
+    originalPrice: "$29.99",
+    pointsPrice: "1,500",
+    discount: "30% OFF",
+    rating: 4.6,
+  },
+  {
+    id: 5,
+    name: "RGB Gaming Chair",
+    image: gamingKeyboard,
+    originalPrice: "$399.99",
+    pointsPrice: "19,800",
+    discount: "10% OFF",
+    rating: 4.5,
+  },
 ];
 
 export const FeaturedProducts = () => {
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  const scrollLeft = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: -200, behavior: 'smooth' });
+    }
+  };
+
+  const scrollRight = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: 200, behavior: 'smooth' });
+    }
+  };
+
   return (
     <div className="px-6 mt-8">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold">Featured Products</h2>
-        <Button variant="ghost" size="sm" className="text-primary">
-          View All
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={scrollLeft}
+            className="h-8 w-8 p-0"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={scrollRight}
+            className="h-8 w-8 p-0"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="sm" className="text-primary ml-2">
+            View All
+          </Button>
+        </div>
       </div>
       
-      <div className="grid grid-cols-1 gap-4">
+      <div 
+        ref={scrollContainerRef}
+        className="flex gap-4 overflow-x-auto scrollbar-hide pb-2"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
         {products.map((product) => (
-          <Card key={product.id} className="shadow-card">
+          <Card key={product.id} className="shadow-card flex-shrink-0 w-48">
             <div className="p-4">
-              <div className="flex gap-4">
-                <div className="relative w-20 h-20 rounded-lg overflow-hidden bg-muted">
+              <div className="space-y-3">
+                <div className="relative w-full h-32 rounded-lg overflow-hidden bg-muted">
                   <img 
                     src={product.image} 
                     alt={product.name}
@@ -59,30 +114,28 @@ export const FeaturedProducts = () => {
                   />
                   <Badge 
                     variant="secondary" 
-                    className="absolute top-1 right-1 text-xs bg-primary/10 text-primary border-primary/20"
+                    className="absolute top-2 right-2 text-xs bg-primary/10 text-primary border-primary/20"
                   >
                     {product.discount}
                   </Badge>
                 </div>
                 
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-sm mb-1 truncate">{product.name}</h3>
-                  <div className="flex items-center gap-1 mb-2">
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-sm leading-tight">{product.name}</h3>
+                  <div className="flex items-center gap-1">
                     <Star className="w-3 h-3 text-primary fill-current" />
                     <span className="text-xs text-muted-foreground">{product.rating}</span>
                   </div>
                   
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs text-muted-foreground line-through">{product.originalPrice}</p>
-                      <p className="text-sm font-bold text-primary">{product.pointsPrice} pts</p>
-                    </div>
-                    
-                    <Button size="sm">
-                      <ShoppingCart className="w-3 h-3 mr-1" />
-                      Redeem
-                    </Button>
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground line-through">{product.originalPrice}</p>
+                    <p className="text-sm font-bold text-primary">{product.pointsPrice} pts</p>
                   </div>
+                  
+                  <Button size="sm" className="w-full">
+                    <ShoppingCart className="w-3 h-3 mr-2" />
+                    Redeem
+                  </Button>
                 </div>
               </div>
             </div>
