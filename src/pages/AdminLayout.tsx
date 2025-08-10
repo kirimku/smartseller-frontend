@@ -27,7 +27,8 @@ import {
   Route,
   Globe,
   Share2,
-  Award
+  Award,
+  Warehouse
 } from "lucide-react";
 
 const sidebarItems = [
@@ -84,6 +85,12 @@ const sidebarItems = [
     icon: Award,
     href: "/admin/loyalty",
     badge: "8"
+  },
+  {
+    title: "Warehouse",
+    icon: Warehouse,
+    href: "/admin/warehouse",
+    badge: "3"
   },
   {
     title: "Analytics",
@@ -230,6 +237,7 @@ export default function AdminLayout() {
                  location.pathname === "/admin/warranty" ? "Warranty Program" :
                  location.pathname === "/admin/affiliate" ? "Affiliate Program" :
                  location.pathname === "/admin/loyalty" ? "Loyalty Rewards" :
+                 location.pathname === "/admin/warehouse" ? "Warehouse Management" :
                  location.pathname === "/admin/analytics" ? "Analytics" :
                  "Admin Panel"}
               </h1>

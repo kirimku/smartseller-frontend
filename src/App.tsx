@@ -20,6 +20,7 @@ import MarketplaceIntegration from "./pages/MarketplaceIntegration";
 import WarrantyProgram from "./pages/WarrantyProgram";
 import AdminAffiliate from "./pages/AdminAffiliate";
 import LoyaltyRewards from "./pages/LoyaltyRewards";
+import WarehouseManagement from "./pages/WarehouseManagement";
 
 const queryClient = new QueryClient();
 
@@ -48,6 +49,7 @@ const App = () => (
             <Route path="warranty" element={<WarrantyProgram />} />
             <Route path="affiliate" element={<AdminAffiliate />} />
             <Route path="loyalty" element={<LoyaltyRewards />} />
+            <Route path="warehouse" element={<WarehouseManagement />} />
           </Route>
           
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
