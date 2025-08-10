@@ -52,7 +52,8 @@ import {
   RefreshCw,
   ArrowUpRight,
   ArrowDownRight,
-  TrendingUp
+  TrendingUp,
+  Plus
 } from "lucide-react";
 
 type OrderStatus = "pending" | "confirmed" | "processing" | "shipped" | "delivered" | "cancelled" | "refunded";
@@ -426,6 +427,12 @@ export default function AdminOrders() {
           <Button variant="outline" className="flex items-center gap-2">
             <RefreshCw className="h-4 w-4" />
             Sync Orders
+          </Button>
+          <Button asChild className="flex items-center gap-2">
+            <a href="/admin/orders/create">
+              <Plus className="h-4 w-4" />
+              Create Order
+            </a>
           </Button>
         </div>
       </div>
