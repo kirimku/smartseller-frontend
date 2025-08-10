@@ -66,6 +66,12 @@ const sidebarItems = [
     badge: null
   },
   {
+    title: "Warranty Program",
+    icon: Shield,
+    href: "/admin/warranty",
+    badge: "5"
+  },
+  {
     title: "Analytics",
     icon: BarChart3,
     href: "/admin/analytics",
@@ -207,6 +213,7 @@ export default function AdminLayout() {
                  location.pathname === "/admin/orders" ? "Order Management" :
                  location.pathname === "/admin/tracking" ? "Tracking & Delivery" :
                  location.pathname === "/admin/marketplace" ? "Marketplace Integration" :
+                 location.pathname === "/admin/warranty" ? "Warranty Program" :
                  location.pathname === "/admin/analytics" ? "Analytics" :
                  "Admin Panel"}
               </h1>
