@@ -2,6 +2,7 @@ import { useState } from "react";
 import { MobileNav } from "@/components/ui/mobile-nav";
 import { HeroSection } from "@/components/sections/hero-section";
 import { StatsSection } from "@/components/sections/stats-section";
+import { MenuSection } from "@/components/sections/menu-section";
 import { FeaturedProducts } from "@/components/sections/featured-products";
 import { RewardsSection } from "@/components/sections/rewards-section";
 import { TopBanner } from "@/components/common/TopBanner";
@@ -16,6 +17,7 @@ const Index = () => {
           <>
             <HeroSection />
             <StatsSection />
+            <MenuSection />
             <FeaturedProducts />
           </>
         );
@@ -43,6 +45,7 @@ const Index = () => {
           <>
             <HeroSection />
             <StatsSection />
+            <MenuSection />
             <FeaturedProducts />
           </>
         );
