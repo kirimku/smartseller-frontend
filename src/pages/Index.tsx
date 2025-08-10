@@ -1,12 +1,57 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState } from "react";
+import { MobileNav } from "@/components/ui/mobile-nav";
+import { HeroSection } from "@/components/sections/hero-section";
+import { StatsSection } from "@/components/sections/stats-section";
+import { FeaturedProducts } from "@/components/sections/featured-products";
+import { RewardsSection } from "@/components/sections/rewards-section";
 
 const Index = () => {
+  const [activeTab, setActiveTab] = useState("home");
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case "home":
+        return (
+          <>
+            <HeroSection />
+            <StatsSection />
+            <FeaturedProducts />
+          </>
+        );
+      case "rewards":
+        return (
+          <div className="pt-6">
+            <RewardsSection />
+          </div>
+        );
+      case "shop":
+        return (
+          <div className="pt-6">
+            <FeaturedProducts />
+          </div>
+        );
+      case "profile":
+        return (
+          <div className="pt-6 px-6 pb-24">
+            <h2 className="text-xl font-bold mb-4">Profile</h2>
+            <p className="text-muted-foreground">Profile section coming soon...</p>
+          </div>
+        );
+      default:
+        return (
+          <>
+            <HeroSection />
+            <StatsSection />
+            <FeaturedProducts />
+          </>
+        );
+    }
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
+    <div className="min-h-screen bg-background">
+      {renderContent()}
+      <MobileNav activeTab={activeTab} onTabChange={setActiveTab} />
     </div>
   );
 };
