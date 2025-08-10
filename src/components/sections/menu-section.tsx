@@ -24,10 +24,12 @@ export const MenuSection = () => {
             <Link
               key={label}
               to={to}
-              className="group flex flex-col items-center justify-center gap-2 rounded-lg bg-card p-4 text-center hover:bg-muted transition-colors"
+              className="group flex flex-col items-center justify-start gap-2 rounded-lg bg-card p-3 text-center hover:bg-muted transition-colors min-h-[80px]"
             >
-              <Icon className="h-5 w-5 text-primary" aria-hidden="true" />
-              <span className="text-xs font-medium">{label}</span>
+              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-muted flex-shrink-0">
+                <Icon className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+              </div>
+              <span className="text-xs font-medium text-muted-foreground leading-tight mt-1">{label}</span>
             </Link>
           ))}
         </div>
