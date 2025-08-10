@@ -8,6 +8,10 @@ import NotFound from "./pages/NotFound";
 import Warranty from "./pages/Warranty";
 import Referral from "./pages/Referral";
 import SpinWin from "./pages/SpinWin";
+import AdminLayout from "./pages/AdminLayout";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminUsers from "./pages/AdminUsers";
+import AdminLogin from "./pages/AdminLogin";
 
 const queryClient = new QueryClient();
 
@@ -22,6 +26,14 @@ const App = () => (
           <Route path="/warranty" element={<Warranty />} />
           <Route path="/referral" element={<Referral />} />
           <Route path="/spin-win" element={<SpinWin />} />
+          
+          {/* Admin Routes */}
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<AdminDashboard />} />
+            <Route path="users" element={<AdminUsers />} />
+          </Route>
+          
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
