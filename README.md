@@ -1,73 +1,115 @@
-# Welcome to your Lovable project
+# Rexus Gaming Rewards Project
 
-## Project info
+A comprehensive gaming peripheral rewards application built with React, TypeScript, and modern web technologies.
 
-**URL**: https://lovable.dev/projects/e69d948b-349d-4201-9111-29396c0b5d5e
+## Project Overview
 
-## How can I edit this code?
+This project is a loyalty rewards system for Rexus gaming peripherals, featuring:
 
-There are several ways of editing your application.
+- **Point-based Redemption System** - Users can redeem gaming peripherals using loyalty points
+- **Admin Dashboard** - Complete order, inventory, and user management system
+- **User Profiles** - Achievement tracking, order history, and profile management
+- **Order Tracking** - Real-time shipping and delivery tracking with detailed timelines
+- **Product Catalog** - Detailed product specifications, reviews, and ratings
+- **Warehouse Management** - Inbound/outbound inventory operations
+- **Affiliate Program** - Referral system with commission tracking
 
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/e69d948b-349d-4201-9111-29396c0b5d5e) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
+## Technologies Used
 
 This project is built with:
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+- **Vite** - Fast build tool and development server
+- **TypeScript** - Type-safe JavaScript development
+- **React 18** - Modern React with hooks and context
+- **shadcn/ui** - High-quality component library
+- **Tailwind CSS** - Utility-first CSS framework
+- **React Router** - Client-side routing
+- **Lucide React** - Beautiful icon library
 
-## How can I deploy this project?
+## Getting Started
 
-Simply open [Lovable](https://lovable.dev/projects/e69d948b-349d-4201-9111-29396c0b5d5e) and click on Share -> Publish.
+### Prerequisites
 
-## Can I connect a custom domain to my Lovable project?
+- Node.js (16.0 or later)
+- npm or yarn package manager
 
-Yes, you can!
+### Installation
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+```sh
+# Clone the repository
+git clone <YOUR_GIT_URL>
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+# Navigate to the project directory
+cd rexus-project
+
+# Install dependencies
+npm install
+
+# Start the development server
+npm run dev
+```
+
+The application will be available at `http://localhost:8080`
+
+### Building for Production
+
+```sh
+# Build the application
+npm run build
+
+# Preview the production build
+npm run preview
+```
+
+## Project Structure
+
+```
+src/
+├── components/          # Reusable UI components
+│   ├── common/         # Common components (Header, etc.)
+│   ├── sections/       # Page sections
+│   └── ui/            # shadcn/ui components
+├── pages/             # Application pages
+├── hooks/             # Custom React hooks
+├── lib/               # Utility functions
+└── assets/            # Static assets
+```
+
+## Key Features
+
+### User Features
+- **Product Browsing** - Browse gaming peripherals with detailed specifications
+- **Points System** - Earn and redeem loyalty points
+- **Order Management** - Track orders with real-time shipping updates
+- **Profile Management** - Comprehensive user profiles with achievements
+- **Mobile Responsive** - Optimized for all device sizes
+
+### Admin Features  
+- **Dashboard Overview** - Sales analytics and key metrics
+- **Order Management** - Process and track all customer orders
+- **Inventory Control** - Manage product stock and warehouse operations
+- **User Management** - Monitor user accounts and activity
+- **Affiliate Tracking** - Manage referral programs and commissions
+
+## Development
+
+The project uses hot module reloading for fast development. All changes are automatically reflected in the browser.
+
+### Available Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run preview` - Preview production build
+- `npm run lint` - Run ESLint
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
+
+## License
+
+This project is proprietary software for Rexus Gaming.
