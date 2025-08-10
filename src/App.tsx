@@ -15,6 +15,7 @@ import AdminLogin from "./pages/AdminLogin";
 import AdminProducts from "./pages/AdminProducts";
 import AdminOrders from "./pages/AdminOrders";
 import CreateOrder from "./pages/CreateOrder";
+import TrackingStatus from "./pages/TrackingStatus";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +39,7 @@ const App = () => (
             <Route path="products" element={<AdminProducts />} />
             <Route path="orders" element={<AdminOrders />} />
             <Route path="orders/create" element={<CreateOrder />} />
+            <Route path="tracking" element={<TrackingStatus />} />
           </Route>
           
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

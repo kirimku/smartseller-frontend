@@ -23,7 +23,8 @@ import {
   TrendingUp,
   DollarSign,
   Calendar,
-  MessageSquare
+  MessageSquare,
+  Route
 } from "lucide-react";
 
 const sidebarItems = [
@@ -50,6 +51,12 @@ const sidebarItems = [
     icon: ShoppingCart,
     href: "/admin/orders",
     badge: "12"
+  },
+  {
+    title: "Tracking & Delivery",
+    icon: Route,
+    href: "/admin/tracking",
+    badge: "2"
   },
   {
     title: "Analytics",
@@ -191,6 +198,7 @@ export default function AdminLayout() {
                  location.pathname === "/admin/users" ? "User Management" :
                  location.pathname === "/admin/products" ? "Product Management" :
                  location.pathname === "/admin/orders" ? "Order Management" :
+                 location.pathname === "/admin/tracking" ? "Tracking & Delivery" :
                  location.pathname === "/admin/analytics" ? "Analytics" :
                  "Admin Panel"}
               </h1>
