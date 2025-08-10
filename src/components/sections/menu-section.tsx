@@ -10,7 +10,7 @@ type MenuItem = {
 
 const items: MenuItem[] = [
   { label: "Monthly Promo", to: "/promo", Icon: Percent },
-  { label: "Referral", to: "/referral", Icon: Users },
+  { label: "Affiliate", to: "/referral", Icon: Users },
   { label: "Warranty", to: "/warranty", Icon: ShieldCheck },
   { label: "Spin & Win", to: "/spin-win", Icon: RotateCw },
 ];
