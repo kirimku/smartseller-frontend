@@ -16,7 +16,7 @@ export const MobileNav = ({ activeTab, onTabChange }: MobileNavProps) => {
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-gaming-card/95 backdrop-blur-lg border-t border-border">
+    <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg border-t border-border">
       <div className="flex justify-around items-center h-16 px-4">
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -31,14 +31,11 @@ export const MobileNav = ({ activeTab, onTabChange }: MobileNavProps) => {
               className={cn(
                 "flex flex-col items-center gap-1 h-12 px-3 transition-smooth",
                 isActive 
-                  ? "text-gaming-cyan" 
+                  ? "text-primary" 
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              <Icon className={cn(
-                "h-5 w-5 transition-smooth",
-                isActive && "drop-shadow-[0_0_8px_hsl(var(--gaming-cyan))]"
-              )} />
+              <Icon className="h-5 w-5 transition-smooth" />
               <span className="text-xs font-medium">{item.label}</span>
             </Button>
           );

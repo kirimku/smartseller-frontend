@@ -38,7 +38,7 @@ export const RewardsSection = () => {
     <div className="px-6 mt-8 pb-24">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold">Available Rewards</h2>
-        <Button variant="ghost" size="sm" className="text-gaming-cyan">
+        <Button variant="ghost" size="sm" className="text-primary">
           View All
         </Button>
       </div>
@@ -48,28 +48,28 @@ export const RewardsSection = () => {
           const Icon = reward.icon;
           
           return (
-            <Card key={reward.id} className="bg-gradient-card border-gaming-card shadow-card">
+            <Card key={reward.id} className="">
               <div className="p-4">
                 <div className="flex items-center gap-4">
-                  <div className={`p-3 rounded-lg bg-${reward.color}/20`}>
-                    <Icon className={`w-5 h-5 text-${reward.color}`} />
+                  <div className="p-3 rounded-lg bg-primary/10">
+                    <Icon className="w-5 h-5 text-primary" />
                   </div>
                   
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="font-semibold text-sm">{reward.title}</h3>
                       {reward.urgent && (
-                        <Badge variant="secondary" className="text-xs bg-orange-500/20 text-orange-400 border-orange-500/30">
+                        <Badge variant="secondary" className="text-xs">
                           <Clock className="w-3 h-3 mr-1" />
                           Limited
                         </Badge>
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground mb-2">{reward.description}</p>
-                    <p className="text-sm font-semibold text-gaming-cyan">{reward.points} points</p>
+                    <p className="text-sm font-semibold text-primary">{reward.points} points</p>
                   </div>
                   
-                  <Button size="sm" variant="outline" className="border-gaming-cyan/30 text-gaming-cyan hover:bg-gaming-cyan/10">
+                  <Button size="sm" variant="outline">
                     Claim
                   </Button>
                 </div>

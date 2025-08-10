@@ -4,6 +4,7 @@ import { HeroSection } from "@/components/sections/hero-section";
 import { StatsSection } from "@/components/sections/stats-section";
 import { FeaturedProducts } from "@/components/sections/featured-products";
 import { RewardsSection } from "@/components/sections/rewards-section";
+import { TopBanner } from "@/components/common/TopBanner";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("home");
@@ -50,6 +51,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <TopBanner />
       {renderContent()}
       <MobileNav activeTab={activeTab} onTabChange={setActiveTab} />
     </div>

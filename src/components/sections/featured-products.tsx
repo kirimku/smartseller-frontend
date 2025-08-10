@@ -41,17 +41,17 @@ export const FeaturedProducts = () => {
     <div className="px-6 mt-8">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold">Featured Products</h2>
-        <Button variant="ghost" size="sm" className="text-gaming-cyan">
+        <Button variant="ghost" size="sm" className="text-primary">
           View All
         </Button>
       </div>
       
       <div className="grid grid-cols-1 gap-4">
         {products.map((product) => (
-          <Card key={product.id} className="bg-gradient-card border-gaming-card shadow-card">
+          <Card key={product.id} className="shadow-card">
             <div className="p-4">
               <div className="flex gap-4">
-                <div className="relative w-20 h-20 rounded-lg overflow-hidden bg-gaming-dark">
+                <div className="relative w-20 h-20 rounded-lg overflow-hidden bg-muted">
                   <img 
                     src={product.image} 
                     alt={product.name}
@@ -59,7 +59,7 @@ export const FeaturedProducts = () => {
                   />
                   <Badge 
                     variant="secondary" 
-                    className="absolute top-1 right-1 text-xs bg-gaming-green/20 text-gaming-green border-gaming-green/30"
+                    className="absolute top-1 right-1 text-xs bg-primary/10 text-primary border-primary/20"
                   >
                     {product.discount}
                   </Badge>
@@ -68,17 +68,17 @@ export const FeaturedProducts = () => {
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-sm mb-1 truncate">{product.name}</h3>
                   <div className="flex items-center gap-1 mb-2">
-                    <Star className="w-3 h-3 text-yellow-400 fill-current" />
+                    <Star className="w-3 h-3 text-primary fill-current" />
                     <span className="text-xs text-muted-foreground">{product.rating}</span>
                   </div>
                   
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-xs text-muted-foreground line-through">{product.originalPrice}</p>
-                      <p className="text-sm font-bold text-gaming-cyan">{product.pointsPrice} pts</p>
+                      <p className="text-sm font-bold text-primary">{product.pointsPrice} pts</p>
                     </div>
                     
-                    <Button size="sm" className="bg-gradient-primary text-gaming-dark hover:opacity-90">
+                    <Button size="sm">
                       <ShoppingCart className="w-3 h-3 mr-1" />
                       Redeem
                     </Button>
