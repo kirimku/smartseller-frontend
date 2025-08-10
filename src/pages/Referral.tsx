@@ -593,7 +593,7 @@ export default function Referral() {
   );
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background pb-24">
       <Header title="Referral Program" />
       <div className="container max-w-2xl mx-auto px-6 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

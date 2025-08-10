@@ -3,6 +3,7 @@ import { MobileNav } from "@/components/ui/mobile-nav";
 import { HeroSection } from "@/components/sections/hero-section";
 import { StatsSection } from "@/components/sections/stats-section";
 import { MenuSection } from "@/components/sections/menu-section";
+import { FlashDeals } from "@/components/sections/flash-deals";
 import { FeaturedProducts } from "@/components/sections/featured-products";
 import { RewardsSection } from "@/components/sections/rewards-section";
 import { TopBanner } from "@/components/common/TopBanner";
@@ -15,22 +16,24 @@ const Index = () => {
     switch (activeTab) {
       case "home":
         return (
-          <>
+          <div className="pb-24">
             <HeroSection />
             <StatsSection />
             <MenuSection />
+            <FlashDeals />
             <FeaturedProducts />
-          </>
+          </div>
         );
       case "rewards":
         return (
-          <div className="pt-6">
+          <div className="pt-6 pb-24">
             <RewardsSection />
           </div>
         );
       case "shop":
         return (
-          <div className="pt-6">
+          <div className="pt-6 pb-24">
+            <FlashDeals />
             <FeaturedProducts />
           </div>
         );
@@ -43,12 +46,13 @@ const Index = () => {
         );
       default:
         return (
-          <>
+          <div className="pb-24">
             <HeroSection />
             <StatsSection />
             <MenuSection />
+            <FlashDeals />
             <FeaturedProducts />
-          </>
+          </div>
         );
     }
   };

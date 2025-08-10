@@ -713,7 +713,7 @@ export default function Warranty() {
   );
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background pb-24">
       <Header title="Warranty" />
       <div className="container max-w-2xl mx-auto px-6 py-8">
         {currentStep === "lookup" && renderLookupStep()}
