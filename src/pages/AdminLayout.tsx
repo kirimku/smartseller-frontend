@@ -24,7 +24,8 @@ import {
   DollarSign,
   Calendar,
   MessageSquare,
-  Route
+  Route,
+  Globe
 } from "lucide-react";
 
 const sidebarItems = [
@@ -57,6 +58,12 @@ const sidebarItems = [
     icon: Route,
     href: "/admin/tracking",
     badge: "2"
+  },
+  {
+    title: "Marketplace Integration",
+    icon: Globe,
+    href: "/admin/marketplace",
+    badge: null
   },
   {
     title: "Analytics",
@@ -199,6 +206,7 @@ export default function AdminLayout() {
                  location.pathname === "/admin/products" ? "Product Management" :
                  location.pathname === "/admin/orders" ? "Order Management" :
                  location.pathname === "/admin/tracking" ? "Tracking & Delivery" :
+                 location.pathname === "/admin/marketplace" ? "Marketplace Integration" :
                  location.pathname === "/admin/analytics" ? "Analytics" :
                  "Admin Panel"}
               </h1>
