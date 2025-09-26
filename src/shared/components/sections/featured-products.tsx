@@ -1,9 +1,9 @@
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import gamingMouse from "@/assets/gaming-mouse.jpg";
-import gamingKeyboard from "@/assets/gaming-keyboard.jpg";
-import gamingHeadset from "@/assets/gaming-headset.jpg";
+import { Card } from "@shared/components/ui/card";
+import { Button } from "@shared/components/ui/button";
+import { Badge } from "@shared/components/ui/badge";
+import gamingMouse from "@shared/assets/gaming-mouse.jpg";
+import gamingKeyboard from "@shared/assets/gaming-keyboard.jpg";
+import gamingHeadset from "@shared/assets/gaming-headset.jpg";
 import { ShoppingCart, Star, ChevronLeft, ChevronRight } from "lucide-react";
 import { useRef } from "react";
 import { useNavigate } from "react-router-dom";

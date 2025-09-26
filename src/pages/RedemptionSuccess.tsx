@@ -1,9 +1,9 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/components/ui/card';
+import { Button } from '@shared/components/ui/button';
+import { Badge } from '@shared/components/ui/badge';
+import { Separator } from '@shared/components/ui/separator';
 import { 
   CheckCircle, 
   Star, 
@@ -18,7 +18,7 @@ import {
   Download,
   Share2
 } from 'lucide-react';
-import { Header } from '@/components/common/Header';
+import { Header } from '@shared/components/common/Header';
 
 interface OrderDetails {
   orderId: string;

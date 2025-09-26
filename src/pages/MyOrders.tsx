@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Progress } from '@/components/ui/progress';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/components/ui/card';
+import { Button } from '@shared/components/ui/button';
+import { Input } from '@shared/components/ui/input';
+import { Label } from '@shared/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@shared/components/ui/tabs';
+import { Badge } from '@shared/components/ui/badge';
+import { Separator } from '@shared/components/ui/separator';
+import { Avatar, AvatarFallback, AvatarImage } from '@shared/components/ui/avatar';
+import { Alert, AlertDescription } from '@shared/components/ui/alert';
+import { Progress } from '@shared/components/ui/progress';
 import { 
   Package, 
   Truck, 
@@ -39,10 +39,10 @@ import {
   Copy,
   MessageSquare
 } from 'lucide-react';
-import { Header } from '@/components/common/Header';
-import gamingMouse from '@/assets/gaming-mouse.jpg';
-import gamingKeyboard from '@/assets/gaming-keyboard.jpg';
-import gamingHeadset from '@/assets/gaming-headset.jpg';
+import { Header } from '@shared/components/common/Header';
+import gamingMouse from '@shared/assets/gaming-mouse.jpg';
+import gamingKeyboard from '@shared/assets/gaming-keyboard.jpg';
+import gamingHeadset from '@shared/assets/gaming-headset.jpg';
 
 interface Order {
   id: string;

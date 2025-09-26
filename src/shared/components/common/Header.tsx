@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@shared/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@shared/components/ui/avatar";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -9,8 +9,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
+} from "@shared/components/ui/dropdown-menu";
+import { Badge } from "@shared/components/ui/badge";
 import { 
   User, 
   Settings, 
@@ -22,7 +22,7 @@ import {
   Bell,
   Menu
 } from "lucide-react";
-import RexusLogo from "@/assets/Rexus_Logo.png";
+import RexusLogo from "@shared/assets/Rexus_Logo.png";
 
 interface HeaderProps {
   title?: string;

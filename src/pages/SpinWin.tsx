@@ -1,13 +1,13 @@
 import { useState, useRef, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { MobileNav } from "@/components/ui/mobile-nav";
-import { Header } from "@/components/common/Header";
-import gamingMouse from "@/assets/gaming-mouse.jpg";
-import gamingKeyboard from "@/assets/gaming-keyboard.jpg";
-import gamingHeadset from "@/assets/gaming-headset.jpg";
+import { Button } from "@shared/components/ui/button";
+import { Card } from "@shared/components/ui/card";
+import { Badge } from "@shared/components/ui/badge";
+import { Separator } from "@shared/components/ui/separator";
+import { MobileNav } from "@shared/components/ui/mobile-nav";
+import { Header } from "@shared/components/common/Header";
+import gamingMouse from "@shared/assets/gaming-mouse.jpg";
+import gamingKeyboard from "@shared/assets/gaming-keyboard.jpg";
+import gamingHeadset from "@shared/assets/gaming-headset.jpg";
 import { 
   RotateCcw, 
   Gift, 

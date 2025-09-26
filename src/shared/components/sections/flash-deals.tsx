@@ -1,10 +1,10 @@
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import gamingMouse from "@/assets/gaming-mouse.jpg";
-import gamingKeyboard from "@/assets/gaming-keyboard.jpg";
-import gamingHeadset from "@/assets/gaming-headset.jpg";
-import flashBanner from "@/assets/flash-gaming-sale-banner-design-shopping-cover-with-flash-icon-gamepad_185386-2024.jpg";
+import { Card } from "@shared/components/ui/card";
+import { Button } from "@shared/components/ui/button";
+import { Badge } from "@shared/components/ui/badge";
+import gamingMouse from "@shared/assets/gaming-mouse.jpg";
+import gamingKeyboard from "@shared/assets/gaming-keyboard.jpg";
+import gamingHeadset from "@shared/assets/gaming-headset.jpg";
+import flashBanner from "@shared/assets/flash-gaming-sale-banner-design-shopping-cover-with-flash-icon-gamepad_185386-2024.jpg";
 import { ShoppingCart, Star, ChevronLeft, ChevronRight, Clock, Zap } from "lucide-react";
 import { useRef, useState, useEffect } from "react";
 

@@ -1,6 +1,6 @@
 import { Home, Trophy, ShoppingBag, User, Menu } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { Button } from "@shared/components/ui/button";
+import { cn } from "@shared/lib/utils";
 
 interface MobileNavProps {
   activeTab: string;

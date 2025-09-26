@@ -1,16 +1,16 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "@shared/components/ui/toaster";
+import { Toaster as Sonner } from "@shared/components/ui/sonner";
+import { TooltipProvider } from "@shared/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import PWAInstallPrompt from "@/components/common/PWAInstallPrompt";
-import Index from "./pages/Index";
+import PWAInstallPrompt from "@shared/components/common/PWAInstallPrompt";
+import StorefrontHome from "./storefront/pages/Home";
 import NotFound from "./pages/NotFound";
 import Warranty from "./pages/Warranty";
 import Referral from "./pages/Referral";
 import SpinWin from "./pages/SpinWin";
 import AdminLayout from "./pages/AdminLayout";
-import AdminDashboard from "./pages/AdminDashboard";
+import TenantAdminDashboard from "./tenant/admin/pages/Dashboard";
 import AdminUsers from "./pages/AdminUsers";
 import AdminLogin from "./pages/AdminLogin";
 import AdminProducts from "./pages/AdminProducts";
@@ -38,7 +38,7 @@ const App = () => (
       <PWAInstallPrompt />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
+          <Route path="/" element={<StorefrontHome />} />
           <Route path="/warranty" element={<Warranty />} />
           <Route path="/referral" element={<Referral />} />
           <Route path="/spin-win" element={<SpinWin />} />
@@ -51,7 +51,7 @@ const App = () => (
           {/* Admin Routes */}
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<AdminDashboard />} />
+            <Route index element={<TenantAdminDashboard />} />
             <Route path="users" element={<AdminUsers />} />
             <Route path="products" element={<AdminProducts />} />
             <Route path="orders" element={<AdminOrders />} />

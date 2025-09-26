@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Input } from '@/components/ui/input';
-import { Separator } from '@/components/ui/separator';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Card, CardContent } from '@shared/components/ui/card';
+import { Button } from '@shared/components/ui/button';
+import { Badge } from '@shared/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@shared/components/ui/tabs';
+import { Input } from '@shared/components/ui/input';
+import { Separator } from '@shared/components/ui/separator';
+import { Avatar, AvatarFallback } from '@shared/components/ui/avatar';
 import { 
   ArrowLeft, 
   Star, 
@@ -29,10 +29,10 @@ import {
   Headphones,
   Monitor
 } from 'lucide-react';
-import gamingMouse from '@/assets/gaming-mouse.jpg';
-import gamingKeyboard from '@/assets/gaming-keyboard.jpg';
-import gamingHeadset from '@/assets/gaming-headset.jpg';
-import { Header } from '@/components/common/Header';
+import gamingMouse from '@shared/assets/gaming-mouse.jpg';
+import gamingKeyboard from '@shared/assets/gaming-keyboard.jpg';
+import gamingHeadset from '@shared/assets/gaming-headset.jpg';
+import { Header } from '@shared/components/common/Header';
 
 interface Product {
   id: number;

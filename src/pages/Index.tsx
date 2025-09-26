@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { MobileNav } from "@/components/ui/mobile-nav";
-import { HeroSection } from "@/components/sections/hero-section";
-import { StatsSection } from "@/components/sections/stats-section";
-import { MenuSection } from "@/components/sections/menu-section";
-import { FlashDeals } from "@/components/sections/flash-deals";
-import { FeaturedProducts } from "@/components/sections/featured-products";
-import { RewardsSection } from "@/components/sections/rewards-section";
-import { TopBanner } from "@/components/common/TopBanner";
-import { Header } from "@/components/common/Header";
+import { MobileNav } from "@shared/components/ui/mobile-nav";
+import { HeroSection } from "@shared/components/sections/hero-section";
+import { StatsSection } from "@shared/components/sections/stats-section";
+import { MenuSection } from "@shared/components/sections/menu-section";
+import { FlashDeals } from "@shared/components/sections/flash-deals";
+import { FeaturedProducts } from "@shared/components/sections/featured-products";
+import { RewardsSection } from "@shared/components/sections/rewards-section";
+import { TopBanner } from "@shared/components/common/TopBanner";
+import { Header } from "@shared/components/common/Header";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("home");

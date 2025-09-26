@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { MobileNav } from '@/components/ui/mobile-nav';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/components/ui/card';
+import { Button } from '@shared/components/ui/button';
+import { Input } from '@shared/components/ui/input';
+import { Label } from '@shared/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@shared/components/ui/tabs';
+import { Badge } from '@shared/components/ui/badge';
+import { Separator } from '@shared/components/ui/separator';
+import { Avatar, AvatarFallback, AvatarImage } from '@shared/components/ui/avatar';
+import { Switch } from '@shared/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/components/ui/select';
+import { Alert, AlertDescription } from '@shared/components/ui/alert';
+import { MobileNav } from '@shared/components/ui/mobile-nav';
 import { 
   User, 
   Star, 
@@ -44,7 +44,7 @@ import {
   LogOut,
   AlertTriangle
 } from 'lucide-react';
-import { Header } from '@/components/common/Header';
+import { Header } from '@shared/components/common/Header';
 
 interface UserProfile {
   id: string;

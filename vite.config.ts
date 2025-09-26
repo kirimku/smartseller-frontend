@@ -105,6 +105,9 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "@platform": path.resolve(__dirname, "./src/platform"),
+      "@tenant": path.resolve(__dirname, "./src/tenant"),
+      "@shared": path.resolve(__dirname, "./src/shared"),
     },
   },
 }));

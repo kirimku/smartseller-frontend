@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@shared/components/ui/button";
 import {
   Carousel,
   CarouselContent,
@@ -7,12 +7,12 @@ import {
   CarouselNext,
   CarouselPrevious,
   type CarouselApi,
-} from "@/components/ui/carousel";
+} from "@shared/components/ui/carousel";
 
-import Banner1 from "@/assets/banners/17an_Banner_WEB_DESKTOP.webp";
-import Banner2 from "@/assets/banners/Launching_Mousemat_Marvel_WEBSITE_DESK.webp";
-import Banner3 from "@/assets/banners/WEBSITE_BANNER__Shop_Today_Invest_For_Your_Future_Desktop.webp";
-import Banner4 from "@/assets/banners/Website_Mousemat_Marvel_Updated_Desktop.webp";
+import Banner1 from "@shared/assets/banners/17an_Banner_WEB_DESKTOP.webp";
+import Banner2 from "@shared/assets/banners/Launching_Mousemat_Marvel_WEBSITE_DESK.webp";
+import Banner3 from "@shared/assets/banners/WEBSITE_BANNER__Shop_Today_Invest_For_Your_Future_Desktop.webp";
+import Banner4 from "@shared/assets/banners/Website_Mousemat_Marvel_Updated_Desktop.webp";
 
 export const HeroSection = () => {
   const [api, setApi] = useState<CarouselApi | null>(null);

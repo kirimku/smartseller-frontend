@@ -1,13 +1,13 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MobileNav } from "@/components/ui/mobile-nav";
-import { Header } from "@/components/common/Header";
+import { Button } from "@shared/components/ui/button";
+import { Card } from "@shared/components/ui/card";
+import { Input } from "@shared/components/ui/input";
+import { Label } from "@shared/components/ui/label";
+import { Badge } from "@shared/components/ui/badge";
+import { Separator } from "@shared/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@shared/components/ui/tabs";
+import { MobileNav } from "@shared/components/ui/mobile-nav";
+import { Header } from "@shared/components/common/Header";
 import { 
   Share2, 
   Copy, 

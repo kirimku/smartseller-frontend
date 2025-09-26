@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Card } from "@/components/ui/card";
+import { Card } from "@shared/components/ui/card";
 import { Percent, Users, ShieldCheck, RotateCw } from "lucide-react";
 
 type MenuItem = {

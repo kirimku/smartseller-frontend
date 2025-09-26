@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@shared/components/ui/button";
+import { Card } from "@shared/components/ui/card";
+import { Separator } from "@shared/components/ui/separator";
+import { Badge } from "@shared/components/ui/badge";
 import { 
   Users, 
   Package, 

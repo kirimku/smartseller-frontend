@@ -1,5 +1,5 @@
-import { Card } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import { Card } from "@shared/components/ui/card";
+import { Progress } from "@shared/components/ui/progress";
 import { Coins, TrendingUp, Trophy } from "lucide-react";
 
 export const StatsSection = () => {
