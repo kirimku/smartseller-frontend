@@ -1,4 +1,18 @@
-# Rexus Gaming Warranty System - API Endpoint Requirements
+# SmartSeller Multi-Tenant API Endpoint Requirements
+
+## Overview
+
+This document defines the comprehensive API endpoints required for the SmartSeller multi-tenant B2B e-commerce platform. The API structure supports three main user types: Platform Administrators, Tenant Administrators, and Customers.
+
+## API Architecture
+
+### Base URL Structure
+```
+https://api.smartseller.com/v1
+├── /platform/*           # Platform management (SmartSeller admin)
+├── /tenants/:tenantId/*   # Tenant-specific operations
+└── /storefront/:slug/*    # Public storefront APIs
+```
 
 ## Table of Contents
 1. [API Architecture Overview](#api-architecture-overview)
