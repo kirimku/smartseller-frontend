@@ -22,6 +22,10 @@ import { TenantProvider } from "./contexts/TenantContext";
 // Route Guards
 import { CustomerGuard } from "./shared/components/RouteGuard";
 
+// Platform Pages
+import { PlatformLanding } from "./platform/pages/PlatformLanding";
+import { PlatformDashboard } from "./platform/pages/PlatformDashboard";
+
 // Authentication Pages
 import { PlatformLogin } from "./platform/pages/Login";
 import { TenantAdminLogin } from "./tenant/admin/pages/Login";
@@ -61,10 +65,13 @@ const LoadingSpinner: React.FC = () => (
 // Platform App Component (SmartSeller Admin)
 const PlatformApp: React.FC = () => (
   <Routes>
-    <Route path="/platform/login" element={<PlatformLogin />} />
-    <Route path="/platform/dashboard" element={<PlatformDashboard />} />
-    <Route path="/platform/*" element={<Navigate to="/platform/dashboard" replace />} />
-    <Route path="/*" element={<Navigate to="/platform/dashboard" replace />} />
+    <Route path="/" element={<PlatformLanding />} />
+    <Route path="/login" element={<PlatformLogin />} />
+    <Route path="/dashboard" element={<PlatformDashboard />} />
+    <Route path="/platform" element={<Navigate to="/" replace />} />
+    <Route path="/platform/login" element={<Navigate to="/login" replace />} />
+    <Route path="/platform/dashboard" element={<Navigate to="/dashboard" replace />} />
+    <Route path="*" element={<Navigate to="/" replace />} />
   </Routes>
 );
 
@@ -74,7 +81,7 @@ const TenantApp: React.FC<{ tenantSlug: string }> = ({ tenantSlug }) => (
     <Routes>
       {/* Tenant Admin Routes */}
       <Route path="/admin/login" element={<TenantAdminLogin />} />
-      <Route path="/admin/dashboard" element={<TenantAdminDashboard />} />
+      <Route path="/admin/dashboard" element={<Navigate to="/admin/users" replace />} />
       
       {/* Legacy admin routes - still accessible */}
       <Route path="/admin/users" element={<AdminUsers />} />
@@ -124,39 +131,9 @@ const TenantApp: React.FC<{ tenantSlug: string }> = ({ tenantSlug }) => (
   </TenantProvider>
 );
 
-// Placeholder Dashboard Components
-const PlatformDashboard: React.FC = () => (
-  <div className="min-h-screen bg-gray-50 p-8">
-    <div className="max-w-7xl mx-auto">
-      <h1 className="text-3xl font-bold text-gray-900 mb-6">Platform Dashboard</h1>
-      <div className="bg-white rounded-lg shadow p-6">
-        <p className="text-gray-600">Platform management interface coming in Week 4...</p>
-        <div className="mt-4 space-y-2">
-          <div className="text-sm text-gray-500">• Tenant Management</div>
-          <div className="text-sm text-gray-500">• System Analytics</div>
-          <div className="text-sm text-gray-500">• Platform Settings</div>
-        </div>
-      </div>
-    </div>
-  </div>
-);
 
-const TenantAdminDashboard: React.FC = () => (
-  <div className="min-h-screen bg-gray-50 p-8">
-    <div className="max-w-7xl mx-auto">
-      <h1 className="text-3xl font-bold text-gray-900 mb-6">Store Admin Dashboard</h1>
-      <div className="bg-white rounded-lg shadow p-6">
-        <p className="text-gray-600">Store administration interface coming in Week 4...</p>
-        <div className="mt-4 space-y-2">
-          <div className="text-sm text-gray-500">• Product Management</div>
-          <div className="text-sm text-gray-500">• Order Processing</div>
-          <div className="text-sm text-gray-500">• Customer Management</div>
-          <div className="text-sm text-gray-500">• Analytics Dashboard</div>
-        </div>
-      </div>
-    </div>
-  </div>
-);
+
+
 
 const App: React.FC = () => {
   const [appMode, setAppMode] = useState<AppMode | null>(null);
