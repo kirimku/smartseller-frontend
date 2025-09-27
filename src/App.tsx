@@ -1,26 +1,12 @@
-import React, { Suspense, useEffect, useState } from 'react';
+import React, { Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from "@shared/components/ui/toaster";
 import { Toaster as Sonner } from "@shared/components/ui/sonner";
 import { TooltipProvider } from "@shared/components/ui/tooltip";
 import PWAInstallPrompt from "@shared/components/common/PWAInstallPrompt";
 
-// Domain Detection
-import { 
-  detectAppMode, 
-  detectTenantSlug, 
-  updateDocumentMetadata, 
-  debugDomainDetection,
-  type AppMode 
-} from "./utils/domain-detector";
-
 // Context Providers
 import { AuthProvider } from "./contexts/AuthContext";
-import { TenantProvider } from "./contexts/TenantContext";
-
-// Route Guards
-import { CustomerGuard } from "./shared/components/RouteGuard";
 
 // Platform Pages
 import { PlatformLanding } from "./platform/pages/PlatformLanding";
@@ -28,32 +14,15 @@ import { PlatformDashboard } from "./platform/pages/PlatformDashboard";
 
 // Authentication Pages
 import { PlatformLogin } from "./platform/pages/Login";
-import { TenantAdminLogin } from "./tenant/admin/pages/Login";
-import { CustomerLogin } from "./storefront/pages/Login";
 
-// Existing pages
-import Index from "./pages/Index";
+// Platform admin pages only
 import NotFound from "./pages/NotFound";
-import Warranty from "./pages/Warranty";
-import Referral from "./pages/Referral";
-import SpinWin from "./pages/SpinWin";
-import AdminUsers from "./pages/AdminUsers";
-import AdminProducts from "./pages/AdminProducts";
-import AdminOrders from "./pages/AdminOrders";
-import CreateOrder from "./pages/CreateOrder";
-import TrackingStatus from "./pages/TrackingStatus";
-import MarketplaceIntegration from "./pages/MarketplaceIntegration";
-import WarrantyProgram from "./pages/WarrantyProgram";
-import AdminAffiliate from "./pages/AdminAffiliate";
-import LoyaltyRewards from "./pages/LoyaltyRewards";
-import WarehouseManagement from "./pages/WarehouseManagement";
-import ProductDetail from "./pages/ProductDetail";
-import RedeemPage from "./pages/RedeemPage";
-import RedemptionSuccess from "./pages/RedemptionSuccess";
-import Profile from "./pages/Profile";
-import MyOrders from "./pages/MyOrders";
 
-const queryClient = new QueryClient();
+// Error Boundary
+import { ErrorBoundary } from "./components/ErrorBoundary";
+
+// Demo Components
+import { ErrorHandlingDemo } from "./components/ErrorHandlingDemo";
 
 // Loading component
 const LoadingSpinner: React.FC = () => (
@@ -62,123 +31,36 @@ const LoadingSpinner: React.FC = () => (
   </div>
 );
 
-// Platform App Component (SmartSeller Admin)
-const PlatformApp: React.FC = () => (
-  <Routes>
-    <Route path="/" element={<PlatformLanding />} />
-    <Route path="/login" element={<PlatformLogin />} />
-    <Route path="/dashboard" element={<PlatformDashboard />} />
-    <Route path="/platform" element={<Navigate to="/" replace />} />
-    <Route path="/platform/login" element={<Navigate to="/login" replace />} />
-    <Route path="/platform/dashboard" element={<Navigate to="/dashboard" replace />} />
-    <Route path="*" element={<Navigate to="/" replace />} />
-  </Routes>
-);
-
-// Tenant App Component (Storefront + Admin)
-const TenantApp: React.FC<{ tenantSlug: string }> = ({ tenantSlug }) => (
-  <TenantProvider tenantSlug={tenantSlug}>
-    <Routes>
-      {/* Tenant Admin Routes */}
-      <Route path="/admin/login" element={<TenantAdminLogin />} />
-      <Route path="/admin/dashboard" element={<Navigate to="/admin/users" replace />} />
-      
-      {/* Legacy admin routes - still accessible */}
-      <Route path="/admin/users" element={<AdminUsers />} />
-      <Route path="/admin/products" element={<AdminProducts />} />
-      <Route path="/admin/orders" element={<AdminOrders />} />
-      <Route path="/admin/orders/create" element={<CreateOrder />} />
-      <Route path="/admin/tracking" element={<TrackingStatus />} />
-      <Route path="/admin/marketplace" element={<MarketplaceIntegration />} />
-      <Route path="/admin/warranty" element={<WarrantyProgram />} />
-      <Route path="/admin/affiliate" element={<AdminAffiliate />} />
-      <Route path="/admin/loyalty" element={<LoyaltyRewards />} />
-      <Route path="/admin/warehouse" element={<WarehouseManagement />} />
-
-      {/* Customer Authentication */}
-      <Route path="/login" element={<CustomerLogin />} />
-
-      {/* Storefront Routes */}
-      <Route path="/" element={<Index />} />
-      <Route path="/warranty" element={<Warranty />} />
-      <Route path="/referral" element={<Referral />} />
-      <Route path="/spin-win" element={<SpinWin />} />
-      <Route path="/product/:productId" element={<ProductDetail />} />
-      <Route path="/redeem/:productId" element={<RedeemPage />} />
-      <Route path="/redemption-success" element={<RedemptionSuccess />} />
-      
-      {/* Protected Customer Routes */}
-      <Route 
-        path="/profile" 
-        element={
-          <CustomerGuard>
-            <Profile />
-          </CustomerGuard>
-        } 
-      />
-      <Route 
-        path="/my-orders" 
-        element={
-          <CustomerGuard>
-            <MyOrders />
-          </CustomerGuard>
-        } 
-      />
-      
-      {/* Catch-all */}
-      <Route path="*" element={<NotFound />} />
-    </Routes>
-  </TenantProvider>
-);
-
-
-
-
-
 const App: React.FC = () => {
-  const [appMode, setAppMode] = useState<AppMode | null>(null);
-  const [tenantSlug, setTenantSlug] = useState<string>('');
-  const [isInitialized, setIsInitialized] = useState(false);
-
-  useEffect(() => {
-    // Detect domain and configure app
-    const mode = detectAppMode();
-    const slug = detectTenantSlug();
-    
-    setAppMode(mode);
-    setTenantSlug(slug);
-    
-    // Update document metadata
-    updateDocumentMetadata();
-    
-    // Debug in development
-    debugDomainDetection();
-    
-    setIsInitialized(true);
-  }, []);
-
-  // Show loading while detecting domain
-  if (!isInitialized || !appMode) {
-    return <LoadingSpinner />;
-  }
-
   return (
-    <QueryClientProvider client={queryClient}>
+    <ErrorBoundary
+      onError={(error, errorInfo) => {
+        // In production, send to error reporting service
+        console.error('App Error:', error, errorInfo);
+      }}
+    >
       <TooltipProvider>
         <Toaster />
         <Sonner />
         <PWAInstallPrompt />
         <BrowserRouter>
-          <Suspense fallback={<LoadingSpinner />}>
-            {appMode === 'platform' ? (
-              <PlatformApp />
-            ) : (
-              <TenantApp tenantSlug={tenantSlug} />
-            )}
-          </Suspense>
+          <AuthProvider>
+            <Suspense fallback={<LoadingSpinner />}>
+              <Routes>
+                <Route path="/" element={<PlatformLanding />} />
+                <Route path="/login" element={<PlatformLogin />} />
+                <Route path="/dashboard" element={<PlatformDashboard />} />
+                <Route path="/demo" element={<ErrorHandlingDemo />} />
+                <Route path="/platform" element={<Navigate to="/" replace />} />
+                <Route path="/platform/login" element={<Navigate to="/login" replace />} />
+                <Route path="/platform/dashboard" element={<Navigate to="/dashboard" replace />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
+          </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
-    </QueryClientProvider>
+    </ErrorBoundary>
   );
 };
 

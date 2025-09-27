@@ -14,7 +14,10 @@
     "deploy": "./scripts/deploy-single.sh",
     "deploy:staging": "./scripts/deploy-single.sh staging",
     "deploy:production": "./scripts/deploy-single.sh production",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "generate:api": "npx @hey-api/openapi-ts --input ./openapi/auth-endpoints.yaml --output ./src/generated/api --client @hey-api/client-axios",
+    "generate:auth": "npm run generate:api",
+    "generate:all": "npm run generate:api"
   },
   "dependencies": {
     "@capacitor/android": "^7.4.2",
@@ -49,7 +52,8 @@
     "@radix-ui/react-toggle": "^1.1.9",
     "@radix-ui/react-toggle-group": "^1.1.10",
     "@radix-ui/react-tooltip": "^1.2.7",
-    "@tanstack/react-query": "^5.83.0",
+    "@tanstack/react-query": "^5.90.2",
+    "axios": "^1.12.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
@@ -73,7 +77,10 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
+    "@hey-api/client-axios": "^0.9.1",
+    "@hey-api/openapi-ts": "^0.84.3",
     "@tailwindcss/typography": "^0.5.16",
+    "@tanstack/react-query-devtools": "^5.90.2",
     "@types/node": "^22.16.5",
     "@types/react": "^18.3.23",
     "@types/react-dom": "^18.3.7",

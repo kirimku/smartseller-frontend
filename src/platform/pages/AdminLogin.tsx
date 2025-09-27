@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@shared/components/ui/button";
 import { Card } from "@shared/components/ui/card";
@@ -6,6 +6,8 @@ import { Input } from "@shared/components/ui/input";
 import { Label } from "@shared/components/ui/label";
 import { Checkbox } from "@shared/components/ui/checkbox";
 import { Shield, Eye, EyeOff, AlertCircle } from "lucide-react";
+import { useAuth } from "../../contexts/AuthContext";
+import { getErrorMessage } from "../../lib/api-client";
 
 export default function AdminLogin() {
   const [email, setEmail] = useState("");
@@ -15,25 +17,34 @@ export default function AdminLogin() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const { login, user, loading, error: authError, clearError } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      // Redirect based on user role
+      if (user.role === 'platform_admin') {
+        navigate('/platform');
+      } else if (user.role === 'tenant_admin') {
+        navigate('/admin');
+      } else {
+        navigate('/');
+      }
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
+    clearError();
 
-    // Simple validation for demo
-    if (email === "admin@rexus.com" && password === "admin123") {
-      // Simulate API call
-      setTimeout(() => {
-        setIsLoading(false);
-        // In real app, you'd set authentication state here
-        navigate("/admin");
-      }, 1000);
-    } else {
-      setTimeout(() => {
-        setIsLoading(false);
-        setError("Invalid email or password");
-      }, 1000);
+    try {
+      await login(email, password);
+      // Navigation will be handled by useEffect when user state changes
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -53,10 +64,10 @@ export default function AdminLogin() {
         <Card className="p-8 shadow-xl">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Error Message */}
-            {error && (
+            {(error || authError) && (
               <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
                 <AlertCircle className="h-4 w-4 text-red-600" />
-                <span className="text-sm text-red-700">{error}</span>
+                <span className="text-sm text-red-700">{error || authError}</span>
               </div>
             )}
 
@@ -122,9 +133,9 @@ export default function AdminLogin() {
             <Button
               type="submit"
               className="w-full h-12 text-base font-medium"
-              disabled={isLoading}
+              disabled={isLoading || loading}
             >
-              {isLoading ? (
+              {(isLoading || loading) ? (
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   Signing in...

@@ -15,7 +15,7 @@ export const PlatformLogin: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { login, isAuthenticated, hasRole } = useAuth();
+  const { login, isAuthenticated, hasRole, loading, error: authError, clearError } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -34,9 +34,10 @@ export const PlatformLogin: React.FC = () => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+    clearError();
 
     try {
-      await login(email, password, 'platform_admin');
+      await login(email, password);
       const redirectTo = searchParams.get('redirect') || '/platform/dashboard';
       navigate(redirectTo, { replace: true });
     } catch (err) {
@@ -61,9 +62,9 @@ export const PlatformLogin: React.FC = () => {
         
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
+            {(error || authError) && (
               <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
+                <AlertDescription>{error || authError}</AlertDescription>
               </Alert>
             )}
 
@@ -110,9 +111,9 @@ export const PlatformLogin: React.FC = () => {
             <Button
               type="submit"
               className="w-full"
-              disabled={isLoading}
+              disabled={isLoading || loading}
             >
-              {isLoading ? (
+              {(isLoading || loading) ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Signing in...
