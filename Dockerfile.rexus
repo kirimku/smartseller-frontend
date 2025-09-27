@@ -1,0 +1,49 @@
+# Dockerfile for Rexus Gaming Store (app.rexus.com)
+# Multi-stage build for production with PWA support
+
+# Build stage
+FROM node:18-alpine as builder
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+COPY .env.production.rexus .env
+
+# Install dependencies
+RUN npm ci
+
+# Copy source code
+COPY . .
+
+# Build Rexus storefront with tenant mode
+ENV VITE_APP_MODE=tenant
+RUN npm run build -- --mode production.rexus --outDir dist/rexus
+
+# Production stage
+FROM nginx:alpine
+
+# Copy custom nginx configuration for PWA support
+COPY nginx/rexus.conf /etc/nginx/conf.d/default.conf
+
+# Copy build files
+COPY --from=builder /app/dist/rexus /usr/share/nginx/html
+
+# Copy PWA assets
+COPY --from=builder /app/dist/rexus/manifest.webmanifest /usr/share/nginx/html/
+COPY --from=builder /app/dist/rexus/sw.js /usr/share/nginx/html/
+
+# Create nginx user and set permissions
+RUN chown -R nginx:nginx /usr/share/nginx/html
+RUN chmod -R 755 /usr/share/nginx/html
+
+# Install curl for health checks
+RUN apk add --no-cache curl
+
+# Health check with gaming-specific endpoint
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost/ || exit 1
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]

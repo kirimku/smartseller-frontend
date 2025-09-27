@@ -5,10 +5,16 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "dev:localhost": "vite --host",
+    "build": "vite build --mode production",
     "build:dev": "vite build --mode development",
-    "lint": "eslint .",
-    "preview": "vite preview"
+    "build:production": "vite build --mode production",
+    "preview": "vite preview",
+    "preview:host": "vite preview --host",
+    "deploy": "./scripts/deploy-single.sh",
+    "deploy:staging": "./scripts/deploy-single.sh staging",
+    "deploy:production": "./scripts/deploy-single.sh production",
+    "lint": "eslint ."
   },
   "dependencies": {
     "@capacitor/android": "^7.4.2",

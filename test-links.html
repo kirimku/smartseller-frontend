@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Domain Test Links</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            line-height: 1.6;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; text-align: center; }
+        h2 { color: #666; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .link-group {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+        .link-group.platform { border-left-color: #007bff; }
+        .link-group.storefront { border-left-color: #dc3545; }
+        a {
+            display: inline-block;
+            padding: 8px 15px;
+            margin: 5px;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        a.storefront { background: #dc3545; }
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e9ecef;
+            border-radius: 5px;
+        }
+        .working { color: #28a745; font-weight: bold; }
+        .might-not-work { color: #ffc107; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌐 Multi-Domain Testing Dashboard</h1>
+        
+        <div class="status">
+            <strong>Server Status:</strong> <span class="working">✅ Development server running on port 4123</span><br>
+            <strong>DNS Status:</strong> <span class="might-not-work">⚠️ Some browsers may have DNS cache issues</span>
+        </div>
+
+        <h2>🚀 Guaranteed Working Links (Use These First):</h2>
+        
+        <div class="link-group platform">
+            <strong>📊 Platform Dashboard (SmartSeller Admin)</strong><br>
+            <a href="http://localhost:4123/?mode=platform" target="_blank">Platform via localhost</a>
+            <a href="http://127.0.0.1:4123/?mode=platform" target="_blank">Platform via IP</a>
+        </div>
+
+        <div class="link-group storefront">
+            <strong>🎮 Storefront (Rexus Gaming)</strong><br>
+            <a href="http://localhost:4123/?mode=tenant" target="_blank" class="storefront">Storefront via localhost</a>
+            <a href="http://127.0.0.1:4123/?mode=tenant" target="_blank" class="storefront">Storefront via IP</a>
+        </div>
+
+        <h2>🏠 Local Domain Links (May need browser refresh):</h2>
+        
+        <div class="link-group platform">
+            <strong>📊 Platform via Local Domain</strong><br>
+            <a href="http://smartseller.local:4123/" target="_blank">smartseller.local:4123</a>
+        </div>
+
+        <div class="link-group storefront">
+            <strong>🎮 Storefront via Local Domain</strong><br>
+            <a href="http://app.rexus.local:4123/" target="_blank" class="storefront">app.rexus.local:4123</a>
+        </div>
+
+        <h2>🔧 Browser Troubleshooting:</h2>
+        <ul>
+            <li><strong>Clear DNS Cache:</strong> In Chrome, go to <code>chrome://net-internals/#dns</code> and click "Clear host cache"</li>
+            <li><strong>Hard Refresh:</strong> Press Ctrl+Shift+R or Cmd+Shift+R</li>
+            <li><strong>Incognito/Private:</strong> Try the local domain links in incognito/private mode</li>
+            <li><strong>Different Browser:</strong> If one browser doesn't work, try Firefox, Edge, or Safari</li>
+        </ul>
+
+        <h2>✅ What Should Happen:</h2>
+        <ul>
+            <li><strong>Platform links</strong> → Should show admin dashboard interface</li>
+            <li><strong>Storefront links</strong> → Should show Rexus gaming store interface</li>
+            <li><strong>Different themes</strong> → Platform (blue), Storefront (gaming colors)</li>
+            <li><strong>Console logs</strong> → Check browser console for domain detection logs</li>
+        </ul>
+
+        <div class="status">
+            <strong>Pro Tip:</strong> Open the working localhost links first to verify functionality, then try the local domain links.
+        </div>
+    </div>
+
+    <script>
+        console.log('🧪 Multi-Domain Test Page Loaded');
+        console.log('Current hostname:', window.location.hostname);
+        console.log('Current port:', window.location.port);
+        
+        // Test all links on page load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                console.log('🔍 Testing link accessibility...');
+                // You can add link testing logic here if needed
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
