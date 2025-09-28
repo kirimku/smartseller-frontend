@@ -1,10 +1,10 @@
 import React, { Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { Toaster } from "@shared/components/ui/toaster";
-import { Toaster as Sonner } from "@shared/components/ui/sonner";
-import { TooltipProvider } from "@shared/components/ui/tooltip";
-import { Button } from "@shared/components/ui/button";
-import PWAInstallPrompt from "@shared/components/common/PWAInstallPrompt";
+import { Toaster } from "./shared/components/ui/toaster";
+import { Toaster as Sonner } from "./shared/components/ui/sonner";
+import { TooltipProvider } from "./shared/components/ui/tooltip";
+import { Button } from "./shared/components/ui/button";
+import PWAInstallPrompt from "./shared/components/common/PWAInstallPrompt";
 
 // Context Providers
 import { AuthProvider } from "./contexts/AuthContext";
@@ -30,6 +30,9 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 
 // Demo Components
 import { ErrorHandlingDemo } from "./components/ErrorHandlingDemo";
+
+// Layouts
+import PlatformLayout from './platform/components/PlatformLayout';
 
 // Loading component
 const LoadingSpinner: React.FC = () => (
@@ -62,30 +65,28 @@ const App: React.FC = () => {
                 autoExtendOnActivity: false,
               }}
             >
-              <SessionWarnings />
               <Suspense fallback={<LoadingSpinner />}>
               <Routes>
                 {/* Public Routes */}
                 <Route path="/" element={<PlatformLanding />} />
                 <Route path="/login" element={<PlatformLogin />} />
                 
-                {/* Protected Routes */}
+                {/* Dashboard - Protected Route */}
                 <Route 
                   path="/dashboard" 
                   element={
-                    <ProtectedRoute 
-                       requiredRoles={['platform_admin', 'tenant_admin']}
-                       fallbackPath="/login"
-                     >
-                      <RouteGuard
-                        requireActiveSession={true}
-                        sessionTimeoutMinutes={30}
+                    <ProtectedRoute>
+                      <RouteGuard 
+                        requiredRole="platform_admin"
                         maxConcurrentSessions={3}
-                        onSessionTimeout={() => console.log('Session timeout detected')}
+                        sessionTimeoutMinutes={30}
+                        onSessionTimeout={() => console.log('Session timeout')}
                         onConcurrentSessionDetected={() => console.log('Concurrent session detected')}
                         onUnauthorizedAccess={(reason) => console.log('Unauthorized access:', reason)}
                       >
-                        <PlatformDashboard />
+                        <PlatformLayout>
+                          <PlatformDashboard />
+                        </PlatformLayout>
                       </RouteGuard>
                     </ProtectedRoute>
                   } 
@@ -113,7 +114,7 @@ const App: React.FC = () => {
                     <div className="min-h-screen flex items-center justify-center bg-gray-50">
                       <div className="text-center">
                         <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
-                        <p className="text-gray-600 mb-6">You don't have permission to access this resource.</p>
+                        <p className="text-gray-600 mb-4">You don't have permission to access this page.</p>
                         <Button onClick={() => window.history.back()}>Go Back</Button>
                       </div>
                     </div>

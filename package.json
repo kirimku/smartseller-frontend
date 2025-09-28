@@ -21,7 +21,8 @@
     "test:coverage": "vitest run --coverage",
     "generate:api": "npx @hey-api/openapi-ts --input ./openapi/auth-endpoints.yaml --output ./src/generated/api --client @hey-api/client-axios",
     "generate:auth": "npm run generate:api",
-    "generate:all": "npm run generate:api"
+    "generate:all": "npm run generate:api",
+    "check:cache": "./scripts/check-cache-busting.sh"
   },
   "dependencies": {
     "@capacitor/android": "^7.4.2",

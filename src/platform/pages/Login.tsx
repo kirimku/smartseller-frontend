@@ -15,32 +15,41 @@ export const PlatformLogin: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { login, isAuthenticated, hasRole, loading, error: authError, clearError } = useAuth();
+  const { login, isAuthenticated, user, hasRole, loading, error: authError, clearError } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  // Redirect if already authenticated as platform admin
-  if (isAuthenticated && hasRole('platform_admin')) {
-    const redirectTo = searchParams.get('redirect') || '/platform/dashboard';
-    return <Navigate to={redirectTo} replace />;
-  }
+  console.log('🔑 [PlatformLogin] Component state:', {
+    isAuthenticated,
+    userRole: user?.role,
+    loading,
+    authError,
+    redirectParam: searchParams.get('redirect')
+  });
 
-  // Redirect if authenticated but wrong role
-  if (isAuthenticated && !hasRole('platform_admin')) {
-    return <Navigate to="/" replace />;
+  // Redirect if already authenticated
+  if (isAuthenticated && user) {
+    const redirectTo = searchParams.get('redirect') || '/dashboard';
+    console.log('🔑 [PlatformLogin] Already authenticated, redirecting to:', redirectTo);
+    return <Navigate to={redirectTo} replace />;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('🔑 [PlatformLogin] Starting login process...');
     setIsLoading(true);
     setError(null);
     clearError();
 
     try {
+      console.log('🔑 [PlatformLogin] Calling login function...');
       await login(email, password);
-      const redirectTo = searchParams.get('redirect') || '/platform/dashboard';
+      console.log('🔑 [PlatformLogin] Login successful, preparing to navigate...');
+      const redirectTo = searchParams.get('redirect') || '/dashboard';
+      console.log('🔑 [PlatformLogin] Navigating to:', redirectTo);
       navigate(redirectTo, { replace: true });
     } catch (err) {
+      console.error('🔑 [PlatformLogin] Login failed:', err);
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally {
       setIsLoading(false);

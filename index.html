@@ -36,26 +36,22 @@
     <meta name="twitter:title" content="Rexus Gaming Rewards" />
     <meta name="twitter:description" content="Ultimate gaming peripheral loyalty program" />
     <meta name="twitter:image" content="/icons/icon-512x512.png" />
+    
+    <!-- Cache Control Meta Tags -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    
+    <!-- Version Meta Tags for Cache Busting -->
+    <meta name="app-version" content="__BUILD_VERSION__" />
+    <meta name="build-timestamp" content="__BUILD_TIMESTAMP__" />
   </head>
 
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     
-    <!-- PWA Installation Script -->
-    <script>
-      // Register service worker
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
-            .then((registration) => {
-              console.log('SW registered: ', registration);
-            })
-            .catch((registrationError) => {
-              console.log('SW registration failed: ', registrationError);
-            });
-        });
-      }
-    </script>
+    <!-- Enhanced PWA Installation Script -->
+    <script src="/registerSW.js"></script>
   </body>
 </html>

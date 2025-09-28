@@ -47,6 +47,7 @@ export class EnhancedApiClient {
   private client: Client;
   private isInitialized = false;
   private refreshPromise: Promise<boolean> | null = null;
+  private isHandlingAuthFailure = false;
 
   constructor() {
     this.client = createClient(createConfig<ClientOptions>({
@@ -142,6 +143,14 @@ export class EnhancedApiClient {
 
         // Handle authentication errors
         if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
+          // Skip auth failure handling for logout endpoints to prevent infinite loops
+          const isLogoutEndpoint = originalRequest.url?.includes('/auth/logout');
+          
+          if (isLogoutEndpoint) {
+            console.log('🔐 Logout endpoint returned 401, skipping auth failure handling');
+            return Promise.reject(error);
+          }
+
           originalRequest._retry = true;
 
           try {
@@ -217,7 +226,19 @@ export class EnhancedApiClient {
       if (responseData.success && responseData.data) {
         const { access_token, refresh_token, token_expiry } = responseData.data;
         
-        await SecureTokenManager.setTokens(access_token, refresh_token, token_expiry);
+        // Convert token_expiry string to expiresIn seconds
+        let expiresIn = 3600; // Default to 1 hour
+        if (token_expiry) {
+          try {
+            const expiryDate = new Date(token_expiry);
+            const now = new Date();
+            expiresIn = Math.max(0, Math.floor((expiryDate.getTime() - now.getTime()) / 1000));
+          } catch (error) {
+            console.warn('Failed to parse token_expiry, using default:', error);
+          }
+        }
+        
+        await SecureTokenManager.setTokens(access_token, refresh_token, expiresIn);
         
         console.log('✅ Tokens refreshed successfully');
         return true;
@@ -235,26 +256,47 @@ export class EnhancedApiClient {
    * Handle authentication failure
    */
   private async handleAuthFailure(reason: string): Promise<void> {
-    // Clear all tokens and auth data
-    await SecureTokenManager.clearTokens();
-    CSRFProtection.clearCSRFToken();
+    // Prevent recursive calls
+    if (this.isHandlingAuthFailure) {
+      console.log(`🔐 Already handling auth failure, skipping: ${reason}`);
+      return;
+    }
 
-    // Dispatch custom event for auth failure
-    window.dispatchEvent(new CustomEvent('auth:logout', { 
-      detail: { reason } 
-    }));
+    this.isHandlingAuthFailure = true;
 
-    console.log(`🔐 Authentication failure handled: ${reason}`);
+    try {
+      // Clear all tokens and auth data
+      await SecureTokenManager.clearTokens();
+      CSRFProtection.clearCSRFToken();
+
+      // Only dispatch event for token expiration, not for user-initiated logout
+      if (reason === 'token_expired') {
+        window.dispatchEvent(new CustomEvent('auth:logout', { 
+          detail: { reason } 
+        }));
+      }
+
+      console.log(`🔐 Authentication failure handled: ${reason}`);
+    } finally {
+      // Reset the flag after a short delay to allow for cleanup
+      setTimeout(() => {
+        this.isHandlingAuthFailure = false;
+      }, 100);
+    }
   }
 
   /**
    * Login with credentials
    */
-  async login(credentials: { email: string; password: string }): Promise<boolean> {
+  async login(credentials: { email_or_phone: string; password: string }): Promise<boolean> {
     try {
       const response = await this.client.post({
         url: '/api/v1/auth/login',
-        body: credentials,
+        body: {
+          email_or_phone: credentials.email_or_phone,
+          password: credentials.password,
+          use_secure_tokens: true
+        },
         headers: await CSRFProtection.addCSRFHeader(),
       });
 
@@ -263,7 +305,19 @@ export class EnhancedApiClient {
       if (responseData.success && responseData.data) {
         const { access_token, refresh_token, token_expiry } = responseData.data;
         
-        await SecureTokenManager.setTokens(access_token, refresh_token, token_expiry);
+        // Convert token_expiry string to expiresIn seconds
+        let expiresIn = 3600; // Default to 1 hour
+        if (token_expiry) {
+          try {
+            const expiryDate = new Date(token_expiry);
+            const now = new Date();
+            expiresIn = Math.max(0, Math.floor((expiryDate.getTime() - now.getTime()) / 1000));
+          } catch (error) {
+            console.warn('Failed to parse token_expiry, using default:', error);
+          }
+        }
+        
+        await SecureTokenManager.setTokens(access_token, refresh_token, expiresIn);
         
         // Dispatch login success event
         window.dispatchEvent(new CustomEvent('auth:login', { 
@@ -291,12 +345,14 @@ export class EnhancedApiClient {
         url: '/api/v1/auth/logout',
         headers: await CSRFProtection.addCSRFHeader(),
       }).catch(() => {
-        // Ignore logout endpoint errors
+        // Ignore logout endpoint errors - this is expected if user is already logged out
         console.warn('⚠️ Logout endpoint not available or failed');
       });
     } finally {
-      // Always clear local tokens
-      await this.handleAuthFailure('user_logout');
+      // Always clear local tokens directly without triggering auth failure handling
+      await SecureTokenManager.clearTokens();
+      CSRFProtection.clearCSRFToken();
+      console.log('🔐 User logged out successfully');
     }
   }
 
@@ -304,8 +360,7 @@ export class EnhancedApiClient {
    * Check if user is authenticated
    */
   async isAuthenticated(): Promise<boolean> {
-    const token = await SecureTokenManager.getAccessToken();
-    return token !== null && !SecureTokenManager.isTokenExpired();
+    return SecureTokenManager.isAuthenticated();
   }
 
   /**
@@ -326,11 +381,11 @@ export class EnhancedApiClient {
   }> {
     const token = await SecureTokenManager.getAccessToken();
     const expiry = SecureTokenManager.getTokenExpiry();
-    const isExpired = SecureTokenManager.isTokenExpired();
+    const isAuthenticated = SecureTokenManager.isAuthenticated();
 
     return {
-      isAuthenticated: token !== null && !isExpired,
-      hasValidToken: token !== null,
+      isAuthenticated,
+      hasValidToken: token !== null || isAuthenticated, // In secure mode, token is null but user can still be authenticated
       tokenExpiry: expiry,
       csrfEnabled: CSRFProtection.isCSRFEnabled(),
     };

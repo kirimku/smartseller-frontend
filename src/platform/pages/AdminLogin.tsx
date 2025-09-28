@@ -22,12 +22,12 @@ export default function AdminLogin() {
   useEffect(() => {
     if (user) {
       // Redirect based on user role
-      if (user.role === 'platform_admin') {
-        navigate('/platform');
-      } else if (user.role === 'tenant_admin') {
-        navigate('/admin');
+      if (user.role === 'admin') {
+        navigate('/dashboard');
+      } else if (user.role === 'manager') {
+        navigate('/dashboard');
       } else {
-        navigate('/');
+        navigate('/dashboard'); // All authenticated users can access dashboard
       }
     }
   }, [user, navigate]);

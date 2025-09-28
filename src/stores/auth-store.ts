@@ -64,22 +64,35 @@ export const useLogin = () => {
       // Initialize secure API if not already done
       await secureApiIntegration.initialize();
       
-      // Try enhanced client first, fallback to regular client
+      // Use the enhanced client for login
       const enhancedClient = getEnhancedClient();
-      const loginSuccess = await enhancedClient.login({
-         email_or_phone: data.email_or_phone,
-         password: data.password,
-       });
       
-      if (loginSuccess) {
-        // Get user data using the enhanced client
-        const response = await postApiV1AuthLogin({
-          body: data,
-          client: enhancedClient.getClient(),
-        });
+      // Make the login API call directly to get both tokens and user data
+      const response = await postApiV1AuthLogin({
+        body: data,
+        client: enhancedClient.getClient(),
+      });
+      
+      if (response.data?.success && response.data?.data) {
+        const { user, access_token, refresh_token, token_expiry } = response.data.data;
         
-        if (response.data?.success && response.data?.data) {
-          const { user } = response.data.data;
+        if (access_token && refresh_token && user) {
+          // Calculate expires_in from token_expiry
+          let expiresIn = 3600; // Default to 1 hour
+          if (token_expiry) {
+            try {
+              const expiryDate = new Date(token_expiry);
+              const now = new Date();
+              expiresIn = Math.max(0, Math.floor((expiryDate.getTime() - now.getTime()) / 1000));
+            } catch (error) {
+              console.warn('Failed to parse token_expiry, using default:', error);
+            }
+          }
+          
+          // Store tokens using the secure token manager
+          await secureApiIntegration.setTokens(access_token, refresh_token, expiresIn);
+          
+          console.log('✅ Login successful, tokens stored and user data received');
           return { user };
         }
       }
@@ -87,9 +100,16 @@ export const useLogin = () => {
       throw new Error('Login failed');
     },
     onSuccess: (data) => {
-      // Invalidate and refetch user data
-      queryClient.invalidateQueries({ queryKey: authKeys.user() });
+      // Set user data in the cache
       queryClient.setQueryData(authKeys.user(), data.user);
+      
+      // Invalidate auth status query to immediately update isAuthenticated
+      queryClient.invalidateQueries({ queryKey: ['auth', 'status'] });
+      
+      // Also set the auth status to true immediately
+      queryClient.setQueryData(['auth', 'status'], true);
+      
+      console.log('✅ User data set in cache and auth status updated:', data.user);
     },
     onError: (error) => {
       console.error('Login failed:', error);
@@ -118,6 +138,11 @@ export const useLogout = () => {
     onSuccess: () => {
       // Clear all auth-related queries
       queryClient.removeQueries({ queryKey: authKeys.all });
+      
+      // Specifically clear auth status
+      queryClient.removeQueries({ queryKey: ['auth', 'status'] });
+      queryClient.setQueryData(['auth', 'status'], false);
+      
       queryClient.clear();
     },
   });
@@ -236,29 +261,99 @@ export const useGoogleLoginCallback = () => {
 
 // User profile query (requires authentication)
 export const useUserProfile = () => {
+  const queryClient = useQueryClient();
+  
   return useQuery({
     queryKey: authKeys.user(),
     queryFn: async (): Promise<UserDto | null> => {
-      const token = TokenManager.getAccessToken();
-      if (!token || TokenManager.isTokenExpired()) {
+      // Check if user is authenticated first
+      const isAuthenticated = await secureApiIntegration.isAuthenticated();
+      if (!isAuthenticated) {
+        console.log('🔐 [auth-store] User not authenticated, returning null');
         return null;
       }
       
-      // For now, return null as we don't have a user profile endpoint
-      // This would typically fetch from /api/v1/auth/me or similar
-      return null;
+      // Check for cached data
+      const cachedUser = queryClient.getQueryData<UserDto>(authKeys.user());
+      if (cachedUser) {
+        console.log('🔐 [auth-store] Using cached user data:', cachedUser.email);
+        return cachedUser;
+      }
+      
+      try {
+        // Fetch user profile from API
+        console.log('🔐 [auth-store] No cached user data found, fetching from API...');
+        const enhancedClient = await getEnhancedClient();
+        const client = enhancedClient.getClient();
+        
+        const response = await client.get({
+          url: '/api/v1/users/me',
+        });
+        
+        interface UserProfileApiResponse {
+          success: boolean;
+          data?: UserDto;
+          message?: string;
+        }
+        
+        const responseData = response.data as UserProfileApiResponse;
+        if (responseData?.success && responseData?.data) {
+          const userData = responseData.data;
+          console.log('🔐 [auth-store] User profile fetched successfully:', userData);
+          
+          // Cache the user data
+          queryClient.setQueryData(authKeys.user(), userData);
+          
+          return userData;
+        } else {
+          console.warn('🔐 [auth-store] Invalid response format from user profile API:', responseData);
+          return null;
+        }
+      } catch (error) {
+        console.error('🔐 [auth-store] Failed to fetch user profile:', error);
+        return null;
+      }
     },
-    enabled: !!TokenManager.getAccessToken() && !TokenManager.isTokenExpired(),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    retry: false,
+    enabled: true, // Always enabled, but queryFn will handle auth check
+    staleTime: 1 * 60 * 1000, // 1 minute - more aggressive refetch
+    gcTime: 30 * 60 * 1000, // 30 minutes garbage collection
+    refetchOnMount: true, // Always refetch when component mounts
+    refetchOnWindowFocus: true, // Refetch when window gains focus
+    retry: (failureCount, error) => {
+      // Don't retry on authentication errors
+      if (error && typeof error === 'object' && 'status' in error && error.status === 401) {
+        return false;
+      }
+      return failureCount < 3;
+    },
   });
 };
 
 // Auth status hook
 export const useAuthStatus = () => {
   const { data: user, isLoading } = useUserProfile();
-  const token = TokenManager.getAccessToken();
-  const isAuthenticated = !!token && !TokenManager.isTokenExpired();
+  
+  // Use a simple query to get auth status
+  const { data: isAuthenticated = false, isFetching, isStale } = useQuery({
+    queryKey: ['auth', 'status'],
+    queryFn: async () => {
+      console.log('🔍 [useAuthStatus] Checking authentication status...');
+      const result = await secureApiIntegration.isAuthenticated();
+      console.log('🔍 [useAuthStatus] Authentication check result:', result);
+      return result;
+    },
+    staleTime: 5000, // Cache for 5 seconds
+    refetchInterval: 30000, // Refetch every 30 seconds
+  });
+  
+  console.log('🔍 [useAuthStatus] Current state:', {
+    user: user?.email || 'null',
+    isAuthenticated,
+    isLoading,
+    isFetching,
+    isStale,
+    hasToken: !!localStorage.getItem('auth_token') || !!sessionStorage.getItem('auth_token')
+  });
   
   return {
     user,

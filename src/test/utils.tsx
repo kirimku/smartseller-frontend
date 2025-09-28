@@ -41,7 +41,7 @@ export const mockUser = {
   id: 'test-user-id',
   email: 'test@example.com',
   name: 'Test User',
-  role: 'customer' as UserRole,
+  role: 'user' as UserRole,
   isEmailVerified: true,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
@@ -51,7 +51,7 @@ export const mockUser = {
 export const mockAuthenticatedContext = createMockAuthContext({
   user: mockUser,
   isAuthenticated: true,
-  hasRole: vi.fn((role: UserRole) => role === 'customer'),
+  hasRole: vi.fn((role: UserRole) => role === 'user'),
   hasPermission: vi.fn(() => true),
 })
 

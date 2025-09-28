@@ -77,62 +77,63 @@ apiClient.instance.interceptors.request.use((config) => {
   return config;
 });
 
-// Response interceptor for error handling and token refresh
-apiClient.instance.interceptors.response.use(
-  (response: AxiosResponse) => {
-    return response;
-  },
-  async (error: AxiosError) => {
-    const originalRequest = error.config as ExtendedAxiosRequestConfig;
+// Response interceptor disabled to prevent conflicts with enhanced API client
+// The enhanced API client handles all authentication logic
+// apiClient.instance.interceptors.response.use(
+//   (response: AxiosResponse) => {
+//     return response;
+//   },
+//   async (error: AxiosError) => {
+//     const originalRequest = error.config as ExtendedAxiosRequestConfig;
 
-    // Handle 401 errors (unauthorized)
-    if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
-      originalRequest._retry = true;
+//     // Handle 401 errors (unauthorized)
+//     if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
+//       originalRequest._retry = true;
 
-      try {
-        const refreshToken = TokenManager.getRefreshToken();
+//       try {
+//         const refreshToken = TokenManager.getRefreshToken();
         
-        if (refreshToken) {
-          // Attempt to refresh the token
-          const refreshResponse = await apiClient.post({
-            url: '/api/v1/auth/refresh',
-            headers: {
-              Authorization: `Bearer ${refreshToken}`,
-            },
-          });
+//         if (refreshToken) {
+//           // Attempt to refresh the token
+//           const refreshResponse = await apiClient.post({
+//             url: '/api/v1/auth/refresh',
+//             headers: {
+//               Authorization: `Bearer ${refreshToken}`,
+//             },
+//           });
 
-          const responseData = refreshResponse.data as unknown;
-          if (responseData && typeof responseData === 'object' && 'success' in responseData) {
-            const typedResponse = responseData as { success: boolean; data?: { access_token: string; refresh_token: string; token_expiry: string } };
-            if (typedResponse.success && typedResponse.data) {
-              const { access_token, refresh_token, token_expiry } = typedResponse.data;
+//           const responseData = refreshResponse.data as unknown;
+//           if (responseData && typeof responseData === 'object' && 'success' in responseData) {
+//             const typedResponse = responseData as { success: boolean; data?: { access_token: string; refresh_token: string; token_expiry: string } };
+//             if (typedResponse.success && typedResponse.data) {
+//               const { access_token, refresh_token, token_expiry } = typedResponse.data;
               
-              if (access_token && refresh_token && token_expiry) {
-                TokenManager.setTokens(access_token, refresh_token, token_expiry);
+//               if (access_token && refresh_token && token_expiry) {
+//                 TokenManager.setTokens(access_token, refresh_token, token_expiry);
                 
-                // Retry the original request with new token
-                originalRequest.headers.set('Authorization', `Bearer ${access_token}`);
-                return apiClient.instance.request(originalRequest);
-              }
-            }
-          }
-        }
-      } catch (refreshError) {
-        console.error('Token refresh failed:', refreshError);
-      }
+//                 // Retry the original request with new token
+//                 originalRequest.headers.set('Authorization', `Bearer ${access_token}`);
+//                 return apiClient.instance.request(originalRequest);
+//               }
+//             }
+//           }
+//         }
+//       } catch (refreshError) {
+//         console.error('Token refresh failed:', refreshError);
+//       }
 
-      // If refresh fails, clear tokens and redirect to login
-      TokenManager.clearTokens();
+//       // If refresh fails, clear tokens and redirect to login
+//       TokenManager.clearTokens();
       
-      // Dispatch custom event for auth failure
-      window.dispatchEvent(new CustomEvent('auth:logout', { 
-        detail: { reason: 'token_expired' } 
-      }));
-    }
+//       // Dispatch custom event for auth failure
+//       window.dispatchEvent(new CustomEvent('auth:logout', { 
+//         detail: { reason: 'token_expired' } 
+//       }));
+//     }
 
-    return Promise.reject(error);
-  }
-);
+//     return Promise.reject(error);
+//   }
+// );
 
 // API Error types
 export interface ApiError {

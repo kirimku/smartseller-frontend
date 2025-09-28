@@ -219,8 +219,8 @@ export class SecureTokenManager {
     
     this.csrfToken = null;
     
-    // Dispatch logout event
-    window.dispatchEvent(new CustomEvent('auth:logout'));
+    // Note: auth:logout event is handled by the enhanced API client
+    // to prevent duplicate events and infinite loops
   }
 
   /**

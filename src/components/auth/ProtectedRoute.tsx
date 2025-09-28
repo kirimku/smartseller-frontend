@@ -106,7 +106,7 @@ const UnauthorizedAccess: React.FC<{
             </Button>
           )}
           <Button 
-            onClick={() => window.location.href = '/platform/login'} 
+            onClick={() => window.location.href = '/login'} 
             className="w-full"
           >
             Go to Login
@@ -126,7 +126,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requiredRoles = [],
   requiredPermissions = [],
   requireTenant = false,
-  fallbackPath = '/platform/login',
+  fallbackPath = '/login',
   fallback,
   allowedRoles = [],
   deniedRoles = [],
@@ -137,13 +137,26 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const { user, loading, isAuthenticated, hasRole, hasPermission } = useAuth();
   const location = useLocation();
 
+  console.log('🛡️ [ProtectedRoute] Checking access for path:', location.pathname);
+  console.log('🛡️ [ProtectedRoute] Auth state:', {
+    user: user?.email || 'null',
+    loading,
+    isAuthenticated,
+    userRole: user?.role || 'null',
+    requiredRole,
+    requiredRoles,
+    fallbackPath
+  });
+
   // Show loading state
   if (loading) {
+    console.log('🛡️ [ProtectedRoute] Showing loading state');
     return loadingComponent || <RouteLoading />;
   }
 
   // Check authentication
   if (!isAuthenticated) {
+    console.log('🛡️ [ProtectedRoute] User not authenticated, redirecting to:', fallbackPath);
     if (fallback) {
       return <>{fallback}</>;
     }
