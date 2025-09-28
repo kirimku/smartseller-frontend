@@ -69,10 +69,10 @@ export function useLoadingManager() {
     }));
   }, [loadingStates]);
 
-  const executeAsync = useCallback(async <T>(
-    operation: AsyncOperation<T>,
+  const executeAsync = useCallback(async (
+    operation: AsyncOperation<unknown>,
     key?: string
-  ): Promise<T> => {
+  ): Promise<unknown> => {
     const operationKey = key || `operation_${++operationCountRef.current}`;
     
     try {
@@ -87,7 +87,7 @@ export function useLoadingManager() {
       stopLoading(operationKey);
       operation.onFinally?.();
     }
-  }, [startLoading, stopLoading]);
+  }, [startLoading, stopLoading]) as <T>(operation: AsyncOperation<T>, key?: string) => Promise<T>;
 
   const clearAllLoading = useCallback(() => {
     setLoadingStates(new Map());
@@ -122,17 +122,17 @@ export function useSimpleLoading(initialState = false) {
     setLoadingMessage(undefined);
   }, []);
 
-  const executeAsync = useCallback(async <T>(
-    operation: () => Promise<T>,
+  const executeAsync = useCallback(async (
+    operation: () => Promise<unknown>,
     message?: string
-  ): Promise<T> => {
+  ): Promise<unknown> => {
     try {
       startLoading(message);
       return await operation();
     } finally {
       stopLoading();
     }
-  }, [startLoading, stopLoading]);
+  }, [startLoading, stopLoading]) as <T>(operation: () => Promise<T>, message?: string) => Promise<T>;
 
   return {
     isLoading,
