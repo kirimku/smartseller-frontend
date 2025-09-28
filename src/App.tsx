@@ -32,6 +32,7 @@ import AdminProducts from "./platform/pages/AdminProducts";
 import AdminUsers from "./platform/pages/AdminUsers";
 import AdminOrders from "./platform/pages/AdminOrders";
 import WarrantyProgram from "./platform/pages/WarrantyProgram";
+import ProductManagement from "./pages/ProductManagement";
 
 // Error Boundary
 import { ErrorBoundary } from "./components/ErrorBoundary";
@@ -99,7 +100,7 @@ const App: React.FC = () => {
                   }
                 >
                   <Route index element={<AdminDashboard />} />
-                  <Route path="products" element={<AdminProducts />} />
+                  <Route path="products" element={<ProductManagement />} />
                   <Route path="users" element={<AdminUsers />} />
                   <Route path="orders" element={<AdminOrders />} />
                   <Route path="warranty" element={<WarrantyProgram />} />

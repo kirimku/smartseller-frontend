@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { GetApiV1AuthGoogleLoginData, GetApiV1AuthGoogleLoginErrors, GetApiV1AuthGoogleLoginResponses, PostApiV1AuthForgotPasswordData, PostApiV1AuthForgotPasswordErrors, PostApiV1AuthForgotPasswordResponses, PostApiV1AuthGoogleCallbackData, PostApiV1AuthGoogleCallbackErrors, PostApiV1AuthGoogleCallbackResponses, PostApiV1AuthLoginData, PostApiV1AuthLoginErrors, PostApiV1AuthLoginResponses, PostApiV1AuthLogoutData, PostApiV1AuthLogoutResponses, PostApiV1AuthRefreshData, PostApiV1AuthRefreshErrors, PostApiV1AuthRefreshResponses, PostApiV1AuthResetPasswordData, PostApiV1AuthResetPasswordErrors, PostApiV1AuthResetPasswordResponses } from './types.gen';
+import type { DeleteAddressesByIdData, DeleteAddressesByIdErrors, DeleteAddressesByIdResponses, DeleteProductsByIdData, DeleteProductsByIdErrors, DeleteProductsByIdResponses, DeleteStorefrontsByIdData, DeleteStorefrontsByIdErrors, DeleteStorefrontsByIdResponses, GetAddressesByIdData, GetAddressesByIdErrors, GetAddressesByIdResponses, GetCustomersByIdAddressesData, GetCustomersByIdAddressesErrors, GetCustomersByIdAddressesResponses, GetCustomersByIdData, GetCustomersByIdErrors, GetCustomersByIdResponses, GetProductsByIdData, GetProductsByIdErrors, GetProductsByIdResponses, GetProductsData, GetProductsErrors, GetProductsResponses, GetStorefrontsByIdData, GetStorefrontsByIdErrors, GetStorefrontsByIdResponses, GetStorefrontsSlugBySlugData, GetStorefrontsSlugBySlugErrors, GetStorefrontsSlugBySlugResponses, PostCustomersByIdAddressesData, PostCustomersByIdAddressesErrors, PostCustomersByIdAddressesResponses, PostCustomersRegisterData, PostCustomersRegisterErrors, PostCustomersRegisterResponses, PostProductsData, PostProductsErrors, PostProductsResponses, PostStorefrontsData, PostStorefrontsErrors, PostStorefrontsResponses, PutCustomersByIdData, PutCustomersByIdErrors, PutCustomersByIdResponses, PutProductsByIdData, PutProductsByIdErrors, PutProductsByIdResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -19,83 +19,21 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
 };
 
 /**
- * Login with email/phone and password
- * Authenticates a user with email/phone and password
- */
-export const postApiV1AuthLogin = <ThrowOnError extends boolean = false>(options: Options<PostApiV1AuthLoginData, ThrowOnError>) => {
-    return (options.client ?? client).post<PostApiV1AuthLoginResponses, PostApiV1AuthLoginErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/api/v1/auth/login',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-/**
- * Get Google Login URL
- * Returns the Google OAuth login URL for client-side redirection.
- */
-export const getApiV1AuthGoogleLogin = <ThrowOnError extends boolean = false>(options?: Options<GetApiV1AuthGoogleLoginData, ThrowOnError>) => {
-    return (options?.client ?? client).get<GetApiV1AuthGoogleLoginResponses, GetApiV1AuthGoogleLoginErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/api/v1/auth/google/login',
-        ...options
-    });
-};
-
-/**
- * Google Login Callback
- * Handles the callback from Google OAuth. Frontend should call this endpoint after receiving the authorization code from Google.
- */
-export const postApiV1AuthGoogleCallback = <ThrowOnError extends boolean = false>(options: Options<PostApiV1AuthGoogleCallbackData, ThrowOnError>) => {
-    return (options.client ?? client).post<PostApiV1AuthGoogleCallbackResponses, PostApiV1AuthGoogleCallbackErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/api/v1/auth/google/callback',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-/**
- * Logout
- * Logs out the user and invalidates the session.
- */
-export const postApiV1AuthLogout = <ThrowOnError extends boolean = false>(options?: Options<PostApiV1AuthLogoutData, ThrowOnError>) => {
-    return (options?.client ?? client).post<PostApiV1AuthLogoutResponses, unknown, ThrowOnError>({
-        responseType: 'json',
-        url: '/api/v1/auth/logout',
-        ...options
-    });
-};
-
-/**
- * Refresh Token
- * Refresh the current access token using a refresh token
- */
-export const postApiV1AuthRefresh = <ThrowOnError extends boolean = false>(options?: Options<PostApiV1AuthRefreshData, ThrowOnError>) => {
-    return (options?.client ?? client).post<PostApiV1AuthRefreshResponses, PostApiV1AuthRefreshErrors, ThrowOnError>({
-        responseType: 'json',
-        url: '/api/v1/auth/refresh',
-        ...options
-    });
-};
-
-/**
- * Initiate Password Reset
- * Initiates the password reset process by sending a reset email to the user's registered email address.
- * For security reasons, this endpoint always returns success regardless of whether the email exists in the system.
+ * Register a new customer
+ * Register a new customer account with email and password.
+ * This endpoint is public and doesn't require authentication.
+ *
+ * **Validation Rules:**
+ * - Email must be unique across the platform
+ * - Password must be at least 8 characters
+ * - First name and last name are required
+ * - Phone number format must be valid if provided
  *
  */
-export const postApiV1AuthForgotPassword = <ThrowOnError extends boolean = false>(options: Options<PostApiV1AuthForgotPasswordData, ThrowOnError>) => {
-    return (options.client ?? client).post<PostApiV1AuthForgotPasswordResponses, PostApiV1AuthForgotPasswordErrors, ThrowOnError>({
+export const postCustomersRegister = <ThrowOnError extends boolean = false>(options: Options<PostCustomersRegisterData, ThrowOnError>) => {
+    return (options.client ?? client).post<PostCustomersRegisterResponses, PostCustomersRegisterErrors, ThrowOnError>({
         responseType: 'json',
-        url: '/api/v1/auth/forgot-password',
+        url: '/customers/register',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -105,19 +43,301 @@ export const postApiV1AuthForgotPassword = <ThrowOnError extends boolean = false
 };
 
 /**
- * Reset Password
- * Resets the user's password using a valid reset token received via email.
- * The token expires after 1 hour for security purposes.
- *
+ * List products with filtering and pagination
+ * Retrieves a paginated list of products with optional filtering, sorting, and search capabilities
  */
-export const postApiV1AuthResetPassword = <ThrowOnError extends boolean = false>(options: Options<PostApiV1AuthResetPasswordData, ThrowOnError>) => {
-    return (options.client ?? client).post<PostApiV1AuthResetPasswordResponses, PostApiV1AuthResetPasswordErrors, ThrowOnError>({
+export const getProducts = <ThrowOnError extends boolean = false>(options?: Options<GetProductsData, ThrowOnError>) => {
+    return (options?.client ?? client).get<GetProductsResponses, GetProductsErrors, ThrowOnError>({
         responseType: 'json',
-        url: '/api/v1/auth/reset-password',
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/products',
+        ...options
+    });
+};
+
+/**
+ * Create a new product
+ * Creates a new product with the provided details. Requires authentication.
+ */
+export const postProducts = <ThrowOnError extends boolean = false>(options: Options<PostProductsData, ThrowOnError>) => {
+    return (options.client ?? client).post<PostProductsResponses, PostProductsErrors, ThrowOnError>({
+        responseType: 'json',
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/products',
         ...options,
         headers: {
             'Content-Type': 'application/json',
             ...options.headers
         }
+    });
+};
+
+/**
+ * Delete a product
+ * Soft deletes a product by marking it as deleted. Products with active variants cannot be deleted.
+ */
+export const deleteProductsById = <ThrowOnError extends boolean = false>(options: Options<DeleteProductsByIdData, ThrowOnError>) => {
+    return (options.client ?? client).delete<DeleteProductsByIdResponses, DeleteProductsByIdErrors, ThrowOnError>({
+        responseType: 'json',
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/products/{id}',
+        ...options
+    });
+};
+
+/**
+ * Get product by ID
+ * Retrieves a specific product by its ID with optional related data inclusion
+ */
+export const getProductsById = <ThrowOnError extends boolean = false>(options: Options<GetProductsByIdData, ThrowOnError>) => {
+    return (options.client ?? client).get<GetProductsByIdResponses, GetProductsByIdErrors, ThrowOnError>({
+        responseType: 'json',
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/products/{id}',
+        ...options
+    });
+};
+
+/**
+ * Update an existing product
+ * Updates an existing product with the provided details. Only provided fields will be updated.
+ */
+export const putProductsById = <ThrowOnError extends boolean = false>(options: Options<PutProductsByIdData, ThrowOnError>) => {
+    return (options.client ?? client).put<PutProductsByIdResponses, PutProductsByIdErrors, ThrowOnError>({
+        responseType: 'json',
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/products/{id}',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+/**
+ * Get customer by ID
+ * Retrieve detailed customer information by customer ID.
+ * Requires authentication and customers can only access their own data.
+ *
+ */
+export const getCustomersById = <ThrowOnError extends boolean = false>(options: Options<GetCustomersByIdData, ThrowOnError>) => {
+    return (options.client ?? client).get<GetCustomersByIdResponses, GetCustomersByIdErrors, ThrowOnError>({
+        responseType: 'json',
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/customers/{id}',
+        ...options
+    });
+};
+
+/**
+ * Update customer profile
+ * Update customer profile information. Customers can only update their own profiles.
+ * Email address cannot be changed through this endpoint.
+ *
+ */
+export const putCustomersById = <ThrowOnError extends boolean = false>(options: Options<PutCustomersByIdData, ThrowOnError>) => {
+    return (options.client ?? client).put<PutCustomersByIdResponses, PutCustomersByIdErrors, ThrowOnError>({
+        responseType: 'json',
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/customers/{id}',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+/**
+ * Get all customer addresses
+ * Retrieve all addresses associated with a customer account.
+ * Results are ordered by default address first, then by creation date.
+ *
+ */
+export const getCustomersByIdAddresses = <ThrowOnError extends boolean = false>(options: Options<GetCustomersByIdAddressesData, ThrowOnError>) => {
+    return (options.client ?? client).get<GetCustomersByIdAddressesResponses, GetCustomersByIdAddressesErrors, ThrowOnError>({
+        responseType: 'json',
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/customers/{id}/addresses',
+        ...options
+    });
+};
+
+/**
+ * Create a new address
+ * Create a new address for a customer. If this is the first address,
+ * it will automatically be set as the default address.
+ *
+ */
+export const postCustomersByIdAddresses = <ThrowOnError extends boolean = false>(options: Options<PostCustomersByIdAddressesData, ThrowOnError>) => {
+    return (options.client ?? client).post<PostCustomersByIdAddressesResponses, PostCustomersByIdAddressesErrors, ThrowOnError>({
+        responseType: 'json',
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/customers/{id}/addresses',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+/**
+ * Delete an address
+ * Delete a customer address. If the deleted address was the default,
+ * another address will automatically be set as default if available.
+ *
+ */
+export const deleteAddressesById = <ThrowOnError extends boolean = false>(options: Options<DeleteAddressesByIdData, ThrowOnError>) => {
+    return (options.client ?? client).delete<DeleteAddressesByIdResponses, DeleteAddressesByIdErrors, ThrowOnError>({
+        responseType: 'json',
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/addresses/{id}',
+        ...options
+    });
+};
+
+/**
+ * Get address by ID
+ * Retrieve specific address details by address ID
+ */
+export const getAddressesById = <ThrowOnError extends boolean = false>(options: Options<GetAddressesByIdData, ThrowOnError>) => {
+    return (options.client ?? client).get<GetAddressesByIdResponses, GetAddressesByIdErrors, ThrowOnError>({
+        responseType: 'json',
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/addresses/{id}',
+        ...options
+    });
+};
+
+/**
+ * Create a new storefront
+ * Create a new storefront for a customer. Each customer can have multiple storefronts.
+ * The slug and domain must be unique across the platform.
+ *
+ */
+export const postStorefronts = <ThrowOnError extends boolean = false>(options: Options<PostStorefrontsData, ThrowOnError>) => {
+    return (options.client ?? client).post<PostStorefrontsResponses, PostStorefrontsErrors, ThrowOnError>({
+        responseType: 'json',
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/storefronts',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+/**
+ * Delete a storefront
+ * Soft delete a storefront. The storefront will be marked as deleted but
+ * data will be preserved for recovery purposes.
+ *
+ */
+export const deleteStorefrontsById = <ThrowOnError extends boolean = false>(options: Options<DeleteStorefrontsByIdData, ThrowOnError>) => {
+    return (options.client ?? client).delete<DeleteStorefrontsByIdResponses, DeleteStorefrontsByIdErrors, ThrowOnError>({
+        responseType: 'json',
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/storefronts/{id}',
+        ...options
+    });
+};
+
+/**
+ * Get storefront by ID
+ * Retrieve detailed storefront information by storefront ID
+ */
+export const getStorefrontsById = <ThrowOnError extends boolean = false>(options: Options<GetStorefrontsByIdData, ThrowOnError>) => {
+    return (options.client ?? client).get<GetStorefrontsByIdResponses, GetStorefrontsByIdErrors, ThrowOnError>({
+        responseType: 'json',
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/storefronts/{id}',
+        ...options
+    });
+};
+
+/**
+ * Get storefront by slug (Public)
+ * Retrieve storefront details by slug. This is a public endpoint
+ * used for displaying storefronts to visitors.
+ *
+ */
+export const getStorefrontsSlugBySlug = <ThrowOnError extends boolean = false>(options: Options<GetStorefrontsSlugBySlugData, ThrowOnError>) => {
+    return (options.client ?? client).get<GetStorefrontsSlugBySlugResponses, GetStorefrontsSlugBySlugErrors, ThrowOnError>({
+        responseType: 'json',
+        url: '/storefronts/slug/{slug}',
+        ...options
     });
 };

@@ -19,7 +19,7 @@
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "generate:api": "npx @hey-api/openapi-ts --input ./openapi/auth-endpoints.yaml --output ./src/generated/api --client @hey-api/client-axios",
+    "generate:api": "npx @hey-api/openapi-ts --input ./openapi/complete-api.yaml --output ./src/generated/api --client @hey-api/client-axios",
     "generate:auth": "npm run generate:api",
     "generate:all": "npm run generate:api",
     "check:cache": "./scripts/check-cache-busting.sh"

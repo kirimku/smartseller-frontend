@@ -1,26 +1,15 @@
 import { defineConfig } from '@hey-api/openapi-ts';
 
 export default defineConfig({
-  client: '@hey-api/client-axios',
-  input: './openapi/auth-endpoints.yaml',
-  output: {
-    format: 'prettier',
-    lint: 'eslint',
-    path: './src/generated/api',
-  },
-  types: {
-    enums: 'javascript',
-    name: 'preserve',
-  },
-  services: {
-    asClass: false,
-    name: '{{name}}Service',
-    operationId: true,
-  },
-  schemas: false,
+  input: './openapi/complete-api.yaml',
+  output: './src/generated/api',
   plugins: [
-    '@hey-api/typescript',
-    '@hey-api/services',
-    '@hey-api/transformers',
+    {
+      name: '@hey-api/typescript',
+    },
+    {
+      name: '@hey-api/sdk',
+      client: '@hey-api/client-axios',
+    },
   ],
 });

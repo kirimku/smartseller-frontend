@@ -30,4 +30,5 @@ export interface ApiError {
 export * from './tenant';
 export * from './user';
 export * from './product';
+export * from './product-management';
 export * from './order';
