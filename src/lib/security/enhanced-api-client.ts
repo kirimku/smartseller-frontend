@@ -14,7 +14,7 @@ import type { AxiosResponse, AxiosError, InternalAxiosRequestConfig } from 'axio
 import { SecureTokenManager } from './secure-token-manager';
 import { CSRFProtection } from './csrf-protection';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+const API_BASE_URL = import.meta.env.VITE_BACKEND_HOST || import.meta.env.VITE_API_BASE_URL || 'http://localhost:8090';
 
 interface ExtendedAxiosRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;

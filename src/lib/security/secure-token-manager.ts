@@ -39,6 +39,9 @@ export class SecureTokenManager {
   
   private static csrfToken: string | null = null;
   private static isSecureModeEnabled = false;
+  
+  // Backend URL configuration
+  private static readonly API_BASE_URL = import.meta.env.VITE_BACKEND_HOST || import.meta.env.VITE_API_BASE_URL || 'http://localhost:8090';
 
   /**
    * Initialize secure token manager
@@ -47,7 +50,7 @@ export class SecureTokenManager {
   static async initialize(): Promise<void> {
     try {
       // Check if backend supports secure token management
-      const response = await fetch('/api/v1/auth/secure-check', {
+      const response = await fetch(`${this.API_BASE_URL}/api/v1/auth/secure-check`, {
         method: 'GET',
         credentials: 'include',
       });
@@ -79,7 +82,7 @@ export class SecureTokenManager {
     if (this.isSecureModeEnabled) {
       try {
         // Send tokens to backend to set as httpOnly cookies
-        const response = await fetch('/api/v1/auth/set-secure-tokens', {
+        const response = await fetch(`${this.API_BASE_URL}/api/v1/auth/set-secure-tokens`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -195,7 +198,7 @@ export class SecureTokenManager {
     if (this.isSecureModeEnabled) {
       try {
         // Clear httpOnly cookies via backend
-        await fetch('/api/v1/auth/clear-secure-tokens', {
+        await fetch(`${this.API_BASE_URL}/api/v1/auth/clear-secure-tokens`, {
           method: 'POST',
           credentials: 'include',
         });
@@ -225,7 +228,7 @@ export class SecureTokenManager {
    */
   static async refreshTokens(): Promise<boolean> {
     try {
-      const response = await fetch('/api/v1/auth/refresh', {
+      const response = await fetch(`${this.API_BASE_URL}/api/v1/auth/refresh`, {
         method: 'POST',
         credentials: 'include',
         headers: this.isSecureModeEnabled ? {

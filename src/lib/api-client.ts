@@ -3,7 +3,7 @@ import type { Client, ClientOptions } from '../generated/api/client';
 import type { AxiosResponse, AxiosError, InternalAxiosRequestConfig } from 'axios';
 
 // Environment configuration
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+const API_BASE_URL = import.meta.env.VITE_BACKEND_HOST || import.meta.env.VITE_API_BASE_URL || 'http://localhost:8090';
 
 // Extend Axios request config to include retry flag
 interface ExtendedAxiosRequestConfig extends InternalAxiosRequestConfig {

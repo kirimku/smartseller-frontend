@@ -12,7 +12,7 @@ export interface ApiConfig {
  * Default API Configuration
  */
 export const DEFAULT_API_CONFIG: ApiConfig = {
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api',
+  baseURL: (import.meta.env.VITE_BACKEND_HOST || import.meta.env.VITE_API_BASE_URL || 'http://localhost:8090') + '/api/v1',
   timeout: 30000,
 };
 

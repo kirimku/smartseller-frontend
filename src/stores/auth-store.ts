@@ -67,7 +67,7 @@ export const useLogin = () => {
       // Try enhanced client first, fallback to regular client
       const enhancedClient = getEnhancedClient();
       const loginSuccess = await enhancedClient.login({
-         email: data.email_or_phone,
+         email_or_phone: data.email_or_phone,
          password: data.password,
        });
       
