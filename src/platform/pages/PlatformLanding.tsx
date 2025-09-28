@@ -1,12 +1,13 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '@shared/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/components/ui/card';
 import { Badge } from '@shared/components/ui/badge';
 import { ArrowRight, Users, Store, BarChart3, Settings, Zap, Shield, Globe, TrendingUp } from 'lucide-react';
 
-export const PlatformLanding: React.FC = () => {
+export default function PlatformLanding() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* Navigation */}
       <nav className="bg-white/80 backdrop-blur-md border-b border-blue-100 sticky top-0 z-50">
         <div className="container mx-auto px-6 py-4">
@@ -21,9 +22,14 @@ export const PlatformLanding: React.FC = () => {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <Button variant="ghost" className="text-gray-600">
-                Login
-              </Button>
+              <Link to="/login">
+                <Button 
+                  variant="ghost" 
+                  className="text-gray-600"
+                >
+                  Login
+                </Button>
+              </Link>
               <Button className="bg-blue-600 hover:bg-blue-700">
                 Get Started
                 <ArrowRight className="ml-2 h-4 w-4" />

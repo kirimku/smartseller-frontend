@@ -14,7 +14,7 @@ import { ErrorHandler, requiresReauth } from '../lib/error-handler';
 
 export type UserRole = 'platform_admin' | 'tenant_admin' | 'customer' | null;
 
-// Map UserDto to our User interface
+// Basic User interface from authentication
 export interface User {
   id: string;
   email: string;
@@ -64,13 +64,13 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [error, setError] = useState<string | null>(null);
   
-  // Use the auth store hooks
-  const { user: userDto, isAuthenticated, isLoading } = useAuthStatus();
+  // Use auth store hooks
+  const { user: userDto, isAuthenticated, isLoading: authLoading } = useAuthStatus();
   const loginMutation = useLogin();
   const logoutMutation = useLogout();
   const forgotPasswordMutation = useForgotPassword();
   const resetPasswordMutation = useResetPassword();
-  const { refetch: fetchGoogleLoginUrl } = useGoogleLoginUrl();
+  const googleLoginUrlMutation = useGoogleLoginUrl();
   const googleCallbackMutation = useGoogleLoginCallback();
 
   // Convert UserDto to User
@@ -138,9 +138,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setError(null);
       await logoutMutation.mutateAsync();
     } catch (err) {
-      const errorMessage = getErrorMessage(err);
-      setError(errorMessage);
-      throw new Error(errorMessage);
+      const message = getErrorMessage(err);
+      setError(message);
+      throw new Error(message);
     }
   };
 
@@ -173,15 +173,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const getGoogleLoginUrl = async (): Promise<string> => {
     try {
       setError(null);
-      const response = await fetchGoogleLoginUrl();
+      const response = await googleLoginUrlMutation.refetch();
       if (response.data?.redirect_url) {
         return response.data.redirect_url;
       }
       throw new Error('Failed to get Google login URL');
     } catch (err) {
-      const errorMessage = getErrorMessage(err);
-      setError(errorMessage);
-      throw new Error(errorMessage);
+      const message = getErrorMessage(err);
+      setError(message);
+      throw new Error(message);
     }
   };
 
@@ -207,12 +207,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const clearError = (): void => {
     setError(null);
   };
-
-  const loading = isLoading || 
+// Combine loading states
+  const loading = authLoading || 
     loginMutation.isPending || 
     logoutMutation.isPending || 
     forgotPasswordMutation.isPending || 
     resetPasswordMutation.isPending ||
+    googleLoginUrlMutation.isLoading ||
     googleCallbackMutation.isPending;
 
   const contextValue: AuthContextType = {
@@ -223,6 +224,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       (logoutMutation.error ? getErrorMessage(logoutMutation.error) : null) ||
       (forgotPasswordMutation.error ? getErrorMessage(forgotPasswordMutation.error) : null) ||
       (resetPasswordMutation.error ? getErrorMessage(resetPasswordMutation.error) : null) ||
+      (googleLoginUrlMutation.error ? getErrorMessage(googleLoginUrlMutation.error) : null) ||
       (googleCallbackMutation.error ? getErrorMessage(googleCallbackMutation.error) : null),
     isAuthenticated,
     login,

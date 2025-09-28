@@ -16,6 +16,7 @@ import type {
   UserDto
 } from '../generated/api/types.gen';
 import { TokenManager, apiClient } from '../lib/api-client';
+import { secureApiIntegration, getEnhancedClient } from '../lib/secure-api-integration';
 
 // Auth query keys
 export const authKeys = {
@@ -32,15 +33,26 @@ export interface AuthState {
 }
 
 // Get current auth state
-export const getAuthState = (): AuthState => {
-  const token = TokenManager.getAccessToken();
-  const isTokenValid = token && !TokenManager.isTokenExpired();
-  
-  return {
-    user: null, // Will be populated by user query
-    isAuthenticated: !!isTokenValid,
-    isLoading: false,
-  };
+export const getAuthState = async (): Promise<AuthState> => {
+  try {
+    const isAuthenticated = await secureApiIntegration.isAuthenticated();
+    
+    return {
+      user: null, // Will be populated by user query
+      isAuthenticated,
+      isLoading: false,
+    };
+  } catch (error) {
+    // Fallback to legacy token check
+    const token = TokenManager.getAccessToken();
+    const isTokenValid = token && !TokenManager.isTokenExpired();
+    
+    return {
+      user: null,
+      isAuthenticated: !!isTokenValid,
+      isLoading: false,
+    };
+  }
 };
 
 // Login mutation
@@ -49,21 +61,30 @@ export const useLogin = () => {
   
   return useMutation({
     mutationFn: async (data: PostApiV1AuthLoginData['body']) => {
-      const response = await postApiV1AuthLogin({
-        body: data,
-        client: apiClient,
-      });
+      // Initialize secure API if not already done
+      await secureApiIntegration.initialize();
       
-      if (response.data?.success && response.data?.data) {
-        const { access_token, refresh_token, token_expiry, user } = response.data.data;
+      // Try enhanced client first, fallback to regular client
+      const enhancedClient = getEnhancedClient();
+      const loginSuccess = await enhancedClient.login({
+         email: data.email_or_phone,
+         password: data.password,
+       });
+      
+      if (loginSuccess) {
+        // Get user data using the enhanced client
+        const response = await postApiV1AuthLogin({
+          body: data,
+          client: enhancedClient.getClient(),
+        });
         
-        if (access_token && refresh_token && token_expiry) {
-          TokenManager.setTokens(access_token, refresh_token, token_expiry);
-          return { user, tokens: { access_token, refresh_token, token_expiry } };
+        if (response.data?.success && response.data?.data) {
+          const { user } = response.data.data;
+          return { user };
         }
       }
       
-      throw new Error(response.data?.message || 'Login failed');
+      throw new Error('Login failed');
     },
     onSuccess: (data) => {
       // Invalidate and refetch user data
@@ -84,15 +105,15 @@ export const useLogout = () => {
   return useMutation({
     mutationFn: async () => {
       try {
-        await postApiV1AuthLogout({
-          client: apiClient,
-        });
+        // Use enhanced client for secure logout
+        const enhancedClient = getEnhancedClient();
+        await enhancedClient.logout();
       } catch (error) {
         // Continue with logout even if API call fails
         console.warn('Logout API call failed:', error);
+        // Fallback to manual token clearing
+        await secureApiIntegration.clearTokens();
       }
-      
-      TokenManager.clearTokens();
     },
     onSuccess: () => {
       // Clear all auth-related queries
@@ -108,25 +129,14 @@ export const useRefreshToken = () => {
   
   return useMutation({
     mutationFn: async () => {
-      const refreshToken = TokenManager.getRefreshToken();
-      if (!refreshToken) {
-        throw new Error('No refresh token available');
+      // Use enhanced client for secure token refresh
+      const success = await secureApiIntegration.refreshTokens();
+      
+      if (!success) {
+        throw new Error('Token refresh failed');
       }
       
-      const response = await postApiV1AuthRefresh({
-        client: apiClient,
-      });
-      
-      if (response.data?.success && response.data?.data) {
-        const { access_token, refresh_token, token_expiry } = response.data.data;
-        
-        if (access_token && refresh_token && token_expiry) {
-          TokenManager.setTokens(access_token, refresh_token, token_expiry);
-          return { access_token, refresh_token, token_expiry };
-        }
-      }
-      
-      throw new Error(response.data?.message || 'Token refresh failed');
+      return { success: true };
     },
     onError: () => {
       TokenManager.clearTokens();

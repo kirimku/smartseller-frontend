@@ -11,7 +11,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { SessionProvider } from "./contexts/SessionContext";
 
 // Platform Pages
-import { PlatformLanding } from "./platform/pages/PlatformLanding";
+import PlatformLanding from "./platform/pages/PlatformLanding";
 import { PlatformDashboard } from "./platform/pages/PlatformDashboard";
 
 // Authentication Pages
