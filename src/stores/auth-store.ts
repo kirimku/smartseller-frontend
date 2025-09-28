@@ -5,18 +5,26 @@ import {
   postApiV1AuthRefresh,
   postApiV1AuthForgotPassword,
   postApiV1AuthResetPassword,
-  getApiV1AuthGoogleLogin,
-  postApiV1AuthGoogleCallback
 } from '../generated/api/sdk.gen';
 import type { 
   PostApiV1AuthLoginData,
   PostApiV1AuthForgotPasswordData,
   PostApiV1AuthResetPasswordData,
-  PostApiV1AuthGoogleCallbackData,
-  UserDto
 } from '../generated/api/types.gen';
-import { TokenManager, apiClient } from '../lib/api-client';
+import { TokenManager } from '../lib/api-client';
 import { secureApiIntegration, getEnhancedClient } from '../lib/secure-api-integration';
+
+// User type definition for auth context
+interface UserDto {
+  id: string;
+  email: string;
+  first_name?: string;
+  last_name?: string;
+  phone?: string | null;
+  status?: 'active' | 'inactive' | 'suspended';
+  created_at?: string;
+  updated_at?: string;
+}
 
 // Auth query keys
 export const authKeys = {
@@ -61,55 +69,42 @@ export const useLogin = () => {
   
   return useMutation({
     mutationFn: async (data: PostApiV1AuthLoginData['body']) => {
-      // Initialize secure API if not already done
-      await secureApiIntegration.initialize();
-      
-      // Use the enhanced client for login
-      const enhancedClient = getEnhancedClient();
-      
-      // Make the login API call directly to get both tokens and user data
       const response = await postApiV1AuthLogin({
         body: data,
-        client: enhancedClient.getClient(),
       });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      console.log('🔐 [auth-store] Login successful, response data:', data);
       
-      if (response.data?.success && response.data?.data) {
-        const { user, access_token, refresh_token, token_expiry } = response.data.data;
+      // Extract and store tokens from the response
+      if (data?.success && data.data) {
+        const { access_token, refresh_token, token_expiry, user } = data.data;
         
-        if (access_token && refresh_token && user) {
-          // Calculate expires_in from token_expiry
-          let expiresIn = 3600; // Default to 1 hour
-          if (token_expiry) {
-            try {
-              const expiryDate = new Date(token_expiry);
-              const now = new Date();
-              expiresIn = Math.max(0, Math.floor((expiryDate.getTime() - now.getTime()) / 1000));
-            } catch (error) {
-              console.warn('Failed to parse token_expiry, using default:', error);
-            }
+        if (access_token && refresh_token && token_expiry) {
+          console.log('🔐 [auth-store] Storing tokens in localStorage');
+          TokenManager.setTokens(access_token, refresh_token, token_expiry);
+          
+          // Store user data in query cache
+          if (user) {
+            const userDto: UserDto = {
+              id: user.id || '',
+              email: user.email || '',
+              first_name: user.first_name,
+              last_name: user.last_name,
+              phone: user.phone,
+              status: user.status,
+              created_at: user.created_at,
+              updated_at: user.updated_at,
+            };
+            queryClient.setQueryData(authKeys.user(), userDto);
           }
-          
-          // Store tokens using the secure token manager
-          await secureApiIntegration.setTokens(access_token, refresh_token, expiresIn);
-          
-          console.log('✅ Login successful, tokens stored and user data received');
-          return { user };
+        } else {
+          console.warn('🔐 [auth-store] Login response missing required token fields');
         }
       }
       
-      throw new Error('Login failed');
-    },
-    onSuccess: (data) => {
-      // Set user data in the cache
-      queryClient.setQueryData(authKeys.user(), data.user);
-      
-      // Invalidate auth status query to immediately update isAuthenticated
-      queryClient.invalidateQueries({ queryKey: ['auth', 'status'] });
-      
-      // Also set the auth status to true immediately
-      queryClient.setQueryData(['auth', 'status'], true);
-      
-      console.log('✅ User data set in cache and auth status updated:', data.user);
+      queryClient.invalidateQueries({ queryKey: authKeys.user() });
     },
     onError: (error) => {
       console.error('Login failed:', error);
@@ -124,18 +119,15 @@ export const useLogout = () => {
   
   return useMutation({
     mutationFn: async () => {
-      try {
-        // Use enhanced client for secure logout
-        const enhancedClient = getEnhancedClient();
-        await enhancedClient.logout();
-      } catch (error) {
-        // Continue with logout even if API call fails
-        console.warn('Logout API call failed:', error);
-        // Fallback to manual token clearing
-        await secureApiIntegration.clearTokens();
-      }
+      const response = await postApiV1AuthLogout();
+      return response.data;
     },
     onSuccess: () => {
+      console.log('🔐 [auth-store] Logout successful, clearing tokens and cache');
+      
+      // Clear tokens from localStorage
+      TokenManager.clearTokens();
+      
       // Clear all auth-related queries
       queryClient.removeQueries({ queryKey: authKeys.all });
       
@@ -144,6 +136,12 @@ export const useLogout = () => {
       queryClient.setQueryData(['auth', 'status'], false);
       
       queryClient.clear();
+    },
+    onError: () => {
+      // Even if logout API fails, clear local tokens
+      console.log('🔐 [auth-store] Logout API failed, but clearing local tokens anyway');
+      TokenManager.clearTokens();
+      queryClient.removeQueries({ queryKey: authKeys.all });
     },
   });
 };
@@ -154,16 +152,26 @@ export const useRefreshToken = () => {
   
   return useMutation({
     mutationFn: async () => {
-      // Use enhanced client for secure token refresh
-      const success = await secureApiIntegration.refreshTokens();
+      const response = await postApiV1AuthRefresh();
+      return response.data;
+    },
+    onSuccess: (data) => {
+      console.log('🔐 [auth-store] Token refresh successful, response data:', data);
       
-      if (!success) {
-        throw new Error('Token refresh failed');
+      // Extract and store new tokens from the response
+      if (data?.success && data.data) {
+        const { access_token, refresh_token, token_expiry } = data.data;
+        
+        if (access_token && refresh_token && token_expiry) {
+          console.log('🔐 [auth-store] Storing refreshed tokens in localStorage');
+          TokenManager.setTokens(access_token, refresh_token, token_expiry);
+        } else {
+          console.warn('🔐 [auth-store] Refresh response missing required token fields');
+        }
       }
-      
-      return { success: true };
     },
     onError: () => {
+      console.log('🔐 [auth-store] Token refresh failed, clearing tokens');
       TokenManager.clearTokens();
       queryClient.removeQueries({ queryKey: authKeys.all });
     },
@@ -176,14 +184,8 @@ export const useForgotPassword = () => {
     mutationFn: async (data: PostApiV1AuthForgotPasswordData['body']) => {
       const response = await postApiV1AuthForgotPassword({
         body: data,
-        client: apiClient,
       });
-      
-      if (response.data?.success) {
-        return response.data;
-      }
-      
-      throw new Error(response.data?.message || 'Failed to send reset email');
+      return response.data;
     },
   });
 };
@@ -194,70 +196,13 @@ export const useResetPassword = () => {
     mutationFn: async (data: PostApiV1AuthResetPasswordData['body']) => {
       const response = await postApiV1AuthResetPassword({
         body: data,
-        client: apiClient,
       });
-      
-      if (response.data?.success) {
-        return response.data;
-      }
-      
-      throw new Error(response.data?.message || 'Password reset failed');
+      return response.data;
     },
   });
 };
 
-// Google login URL query
-export const useGoogleLoginUrl = () => {
-  return useQuery({
-    queryKey: ['auth', 'google-login-url'],
-    queryFn: async () => {
-      const response = await getApiV1AuthGoogleLogin({
-        client: apiClient,
-      });
-      
-      if (response.data?.success && response.data?.data) {
-        return response.data.data;
-      }
-      
-      throw new Error(response.data?.message || 'Failed to get Google login URL');
-    },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    enabled: false, // Only fetch when explicitly requested
-  });
-};
-
-// Google login callback mutation
-export const useGoogleLoginCallback = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: async (data: PostApiV1AuthGoogleCallbackData['body']) => {
-      const response = await postApiV1AuthGoogleCallback({
-        body: data,
-        client: apiClient,
-      });
-      
-      if (response.data?.success && response.data?.data) {
-        const { access_token, refresh_token, token_expiry, user } = response.data.data;
-        
-        if (access_token && refresh_token && token_expiry) {
-          TokenManager.setTokens(access_token, refresh_token, token_expiry);
-          return { user, tokens: { access_token, refresh_token, token_expiry } };
-        }
-      }
-      
-      throw new Error(response.data?.message || 'Google login failed');
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: authKeys.user() });
-      queryClient.setQueryData(authKeys.user(), data.user);
-    },
-    onError: (error) => {
-      console.error('Google login failed:', error);
-      TokenManager.clearTokens();
-    },
-  });
-};
+// Note: Google login endpoints are not implemented in the current API
 
 // User profile query (requires authentication)
 export const useUserProfile = () => {

@@ -5,11 +5,9 @@ import {
   useAuthStatus, 
   useForgotPassword, 
   useResetPassword,
-  useGoogleLoginUrl,
-  useGoogleLoginCallback,
   useUserProfile
 } from '../stores/auth-store';
-import type { UserDto } from '../generated/api/types.gen';
+// User types are now embedded in the login response
 import { getErrorMessage } from '../lib/api-client';
 import { ErrorHandler, requiresReauth } from '../lib/error-handler';
 import { useQueryClient } from '@tanstack/react-query';
@@ -83,8 +81,6 @@ export interface AuthContextType {
   logout: () => Promise<void>;
   forgotPassword: (email: string) => Promise<void>;
   resetPassword: (token: string, newPassword: string) => Promise<void>;
-  getGoogleLoginUrl: () => Promise<string>;
-  handleGoogleCallback: (code: string, state?: string) => Promise<void>;
   hasRole: (role: UserRole) => boolean;
   hasPermission: (permission: string) => boolean;
   clearError: () => void;
@@ -104,8 +100,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const logoutMutation = useLogout();
   const forgotPasswordMutation = useForgotPassword();
   const resetPasswordMutation = useResetPassword();
-  const googleLoginUrlMutation = useGoogleLoginUrl();
-  const googleCallbackMutation = useGoogleLoginCallback();
 
   // Convert UserDto to User
   const user = mapUserDtoToUser(userDto as unknown as BackendUserDto);
@@ -222,31 +216,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const getGoogleLoginUrl = async (): Promise<string> => {
-    try {
-      setError(null);
-      const response = await googleLoginUrlMutation.refetch();
-      if (response.data?.redirect_url) {
-        return response.data.redirect_url;
-      }
-      throw new Error('Failed to get Google login URL');
-    } catch (err) {
-      const message = getErrorMessage(err);
-      setError(message);
-      throw new Error(message);
-    }
-  };
 
-  const handleGoogleCallback = async (code: string, state?: string): Promise<void> => {
-    try {
-      setError(null);
-      await googleCallbackMutation.mutateAsync({ code, state });
-    } catch (err) {
-      const errorMessage = getErrorMessage(err);
-      setError(errorMessage);
-      throw new Error(errorMessage);
-    }
-  };
 
   const hasRole = (role: UserRole): boolean => {
     console.log('🔐 [AuthContext] hasRole check:', {
@@ -281,9 +251,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     loginMutation.isPending || 
     logoutMutation.isPending || 
     forgotPasswordMutation.isPending || 
-    resetPasswordMutation.isPending ||
-    googleLoginUrlMutation.isLoading ||
-    googleCallbackMutation.isPending;
+    resetPasswordMutation.isPending;
 
   const contextValue: AuthContextType = {
     user,
@@ -292,17 +260,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       (loginMutation.error ? getErrorMessage(loginMutation.error) : null) ||
       (logoutMutation.error ? getErrorMessage(logoutMutation.error) : null) ||
       (forgotPasswordMutation.error ? getErrorMessage(forgotPasswordMutation.error) : null) ||
-      (resetPasswordMutation.error ? getErrorMessage(resetPasswordMutation.error) : null) ||
-      (googleLoginUrlMutation.error ? getErrorMessage(googleLoginUrlMutation.error) : null) ||
-      (googleCallbackMutation.error ? getErrorMessage(googleCallbackMutation.error) : null),
+      (resetPasswordMutation.error ? getErrorMessage(resetPasswordMutation.error) : null),
     isAuthenticated,
     login,
     loginWithPhone,
     logout,
     forgotPassword,
     resetPassword,
-    getGoogleLoginUrl,
-    handleGoogleCallback,
     hasRole,
     hasPermission,
     clearError,

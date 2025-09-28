@@ -9,11 +9,11 @@
  */
 
 import { 
-  getProducts as apiGetProducts, 
-  postProducts as apiPostProducts, 
-  getProductsById as apiGetProductsById, 
-  putProductsById as apiPutProductsById, 
-  deleteProductsById as apiDeleteProductsById 
+  getApiV1Products as apiGetProducts, 
+  postApiV1Products as apiPostProducts, 
+  getApiV1ProductsById as apiGetProductsById, 
+  putApiV1ProductsById as apiPutProductsById, 
+  deleteApiV1ProductsById as apiDeleteProductsById 
 } from '../generated/api/sdk.gen';
 import type { 
   CreateProductRequest,
@@ -21,10 +21,11 @@ import type {
   ProductResponse,
   ProductListItem,
   ProductListResponse,
-  GetProductsData,
+  GetApiV1ProductsData,
   ErrorResponse
 } from '../generated/api/types.gen';
-import { apiClient, getErrorMessage, isApiError } from '../lib/api-client';
+import { getSecureClient } from '../lib/secure-api-integration';
+import { getErrorMessage, isApiError } from '../lib/security/enhanced-api-client';
 
 export interface ProductFilters {
   page?: number;
@@ -74,7 +75,7 @@ export class ProductService {
     }
 
     try {
-      const queryParams: GetProductsData['query'] = {
+      const queryParams: GetApiV1ProductsData['query'] = {
         page: filters.page || 1,
         page_size: filters.page_size || 20,
         sort_by: filters.sort_by,
@@ -89,7 +90,7 @@ export class ProductService {
       };
 
       const response = await apiGetProducts({
-        client: apiClient,
+        client: getSecureClient(),
         query: queryParams,
       });
 
@@ -148,7 +149,7 @@ export class ProductService {
 
     try {
       const response = await apiGetProductsById({
-        client: apiClient,
+        client: getSecureClient(),
         path: { id },
       });
 
@@ -190,7 +191,7 @@ export class ProductService {
   static async createProduct(productData: CreateProductRequest): Promise<ProductResponse> {
     try {
       const response = await apiPostProducts({
-        client: apiClient,
+        client: getSecureClient(),
         body: productData,
       });
 
@@ -235,7 +236,7 @@ export class ProductService {
   static async updateProduct(id: string, productData: UpdateProductRequest): Promise<ProductResponse> {
     try {
       const response = await apiPutProductsById({
-        client: apiClient,
+        client: getSecureClient(),
         path: { id },
         body: productData,
       });
@@ -281,7 +282,7 @@ export class ProductService {
   static async deleteProduct(id: string): Promise<void> {
     try {
       const response = await apiDeleteProductsById({
-        client: apiClient,
+        client: getSecureClient(),
         path: { id },
       });
 

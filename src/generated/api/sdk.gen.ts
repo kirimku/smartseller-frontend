@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { DeleteAddressesByIdData, DeleteAddressesByIdErrors, DeleteAddressesByIdResponses, DeleteProductsByIdData, DeleteProductsByIdErrors, DeleteProductsByIdResponses, DeleteStorefrontsByIdData, DeleteStorefrontsByIdErrors, DeleteStorefrontsByIdResponses, GetAddressesByIdData, GetAddressesByIdErrors, GetAddressesByIdResponses, GetCustomersByIdAddressesData, GetCustomersByIdAddressesErrors, GetCustomersByIdAddressesResponses, GetCustomersByIdData, GetCustomersByIdErrors, GetCustomersByIdResponses, GetProductsByIdData, GetProductsByIdErrors, GetProductsByIdResponses, GetProductsData, GetProductsErrors, GetProductsResponses, GetStorefrontsByIdData, GetStorefrontsByIdErrors, GetStorefrontsByIdResponses, GetStorefrontsSlugBySlugData, GetStorefrontsSlugBySlugErrors, GetStorefrontsSlugBySlugResponses, PostCustomersByIdAddressesData, PostCustomersByIdAddressesErrors, PostCustomersByIdAddressesResponses, PostCustomersRegisterData, PostCustomersRegisterErrors, PostCustomersRegisterResponses, PostProductsData, PostProductsErrors, PostProductsResponses, PostStorefrontsData, PostStorefrontsErrors, PostStorefrontsResponses, PutCustomersByIdData, PutCustomersByIdErrors, PutCustomersByIdResponses, PutProductsByIdData, PutProductsByIdErrors, PutProductsByIdResponses } from './types.gen';
+import type { DeleteAddressesByIdData, DeleteAddressesByIdErrors, DeleteAddressesByIdResponses, DeleteApiV1ProductsByIdData, DeleteApiV1ProductsByIdErrors, DeleteApiV1ProductsByIdResponses, DeleteStorefrontsByIdData, DeleteStorefrontsByIdErrors, DeleteStorefrontsByIdResponses, GetAddressesByIdData, GetAddressesByIdErrors, GetAddressesByIdResponses, GetApiV1ProductsByIdData, GetApiV1ProductsByIdErrors, GetApiV1ProductsByIdResponses, GetApiV1ProductsData, GetApiV1ProductsErrors, GetApiV1ProductsResponses, GetCustomersByIdAddressesData, GetCustomersByIdAddressesErrors, GetCustomersByIdAddressesResponses, GetCustomersByIdData, GetCustomersByIdErrors, GetCustomersByIdResponses, GetStorefrontsByIdData, GetStorefrontsByIdErrors, GetStorefrontsByIdResponses, GetStorefrontsSlugBySlugData, GetStorefrontsSlugBySlugErrors, GetStorefrontsSlugBySlugResponses, PostApiV1AuthForgotPasswordData, PostApiV1AuthForgotPasswordErrors, PostApiV1AuthForgotPasswordResponses, PostApiV1AuthLoginData, PostApiV1AuthLoginErrors, PostApiV1AuthLoginResponses, PostApiV1AuthLogoutData, PostApiV1AuthLogoutResponses, PostApiV1AuthRefreshData, PostApiV1AuthRefreshErrors, PostApiV1AuthRefreshResponses, PostApiV1AuthResetPasswordData, PostApiV1AuthResetPasswordErrors, PostApiV1AuthResetPasswordResponses, PostApiV1ProductsData, PostApiV1ProductsErrors, PostApiV1ProductsResponses, PostCustomersByIdAddressesData, PostCustomersByIdAddressesErrors, PostCustomersByIdAddressesResponses, PostCustomersRegisterData, PostCustomersRegisterErrors, PostCustomersRegisterResponses, PostStorefrontsData, PostStorefrontsErrors, PostStorefrontsResponses, PutApiV1ProductsByIdData, PutApiV1ProductsByIdErrors, PutApiV1ProductsByIdResponses, PutCustomersByIdData, PutCustomersByIdErrors, PutCustomersByIdResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -16,6 +16,94 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
      * used to access values that aren't defined as part of the SDK function.
      */
     meta?: Record<string, unknown>;
+};
+
+/**
+ * Login with email/phone and password
+ * Authenticates a user with email/phone and password
+ */
+export const postApiV1AuthLogin = <ThrowOnError extends boolean = false>(options: Options<PostApiV1AuthLoginData, ThrowOnError>) => {
+    return (options.client ?? client).post<PostApiV1AuthLoginResponses, PostApiV1AuthLoginErrors, ThrowOnError>({
+        responseType: 'json',
+        url: '/api/v1/auth/login',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+/**
+ * Logout
+ * Logs out the user and invalidates the session.
+ */
+export const postApiV1AuthLogout = <ThrowOnError extends boolean = false>(options?: Options<PostApiV1AuthLogoutData, ThrowOnError>) => {
+    return (options?.client ?? client).post<PostApiV1AuthLogoutResponses, unknown, ThrowOnError>({
+        responseType: 'json',
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/api/v1/auth/logout',
+        ...options
+    });
+};
+
+/**
+ * Refresh Token
+ * Refresh the current access token using a refresh token
+ */
+export const postApiV1AuthRefresh = <ThrowOnError extends boolean = false>(options?: Options<PostApiV1AuthRefreshData, ThrowOnError>) => {
+    return (options?.client ?? client).post<PostApiV1AuthRefreshResponses, PostApiV1AuthRefreshErrors, ThrowOnError>({
+        responseType: 'json',
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/api/v1/auth/refresh',
+        ...options
+    });
+};
+
+/**
+ * Initiate Password Reset
+ * Initiates the password reset process by sending a reset email to the user's registered email address.
+ * For security reasons, this endpoint always returns success regardless of whether the email exists in the system.
+ *
+ */
+export const postApiV1AuthForgotPassword = <ThrowOnError extends boolean = false>(options: Options<PostApiV1AuthForgotPasswordData, ThrowOnError>) => {
+    return (options.client ?? client).post<PostApiV1AuthForgotPasswordResponses, PostApiV1AuthForgotPasswordErrors, ThrowOnError>({
+        responseType: 'json',
+        url: '/api/v1/auth/forgot-password',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+/**
+ * Reset Password
+ * Resets the user's password using a valid reset token received via email.
+ * The token expires after 1 hour for security purposes.
+ *
+ */
+export const postApiV1AuthResetPassword = <ThrowOnError extends boolean = false>(options: Options<PostApiV1AuthResetPasswordData, ThrowOnError>) => {
+    return (options.client ?? client).post<PostApiV1AuthResetPasswordResponses, PostApiV1AuthResetPasswordErrors, ThrowOnError>({
+        responseType: 'json',
+        url: '/api/v1/auth/reset-password',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
 };
 
 /**
@@ -46,8 +134,8 @@ export const postCustomersRegister = <ThrowOnError extends boolean = false>(opti
  * List products with filtering and pagination
  * Retrieves a paginated list of products with optional filtering, sorting, and search capabilities
  */
-export const getProducts = <ThrowOnError extends boolean = false>(options?: Options<GetProductsData, ThrowOnError>) => {
-    return (options?.client ?? client).get<GetProductsResponses, GetProductsErrors, ThrowOnError>({
+export const getApiV1Products = <ThrowOnError extends boolean = false>(options?: Options<GetApiV1ProductsData, ThrowOnError>) => {
+    return (options?.client ?? client).get<GetApiV1ProductsResponses, GetApiV1ProductsErrors, ThrowOnError>({
         responseType: 'json',
         security: [
             {
@@ -55,7 +143,7 @@ export const getProducts = <ThrowOnError extends boolean = false>(options?: Opti
                 type: 'http'
             }
         ],
-        url: '/products',
+        url: '/api/v1/products',
         ...options
     });
 };
@@ -64,8 +152,8 @@ export const getProducts = <ThrowOnError extends boolean = false>(options?: Opti
  * Create a new product
  * Creates a new product with the provided details. Requires authentication.
  */
-export const postProducts = <ThrowOnError extends boolean = false>(options: Options<PostProductsData, ThrowOnError>) => {
-    return (options.client ?? client).post<PostProductsResponses, PostProductsErrors, ThrowOnError>({
+export const postApiV1Products = <ThrowOnError extends boolean = false>(options: Options<PostApiV1ProductsData, ThrowOnError>) => {
+    return (options.client ?? client).post<PostApiV1ProductsResponses, PostApiV1ProductsErrors, ThrowOnError>({
         responseType: 'json',
         security: [
             {
@@ -73,7 +161,7 @@ export const postProducts = <ThrowOnError extends boolean = false>(options: Opti
                 type: 'http'
             }
         ],
-        url: '/products',
+        url: '/api/v1/products',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -86,8 +174,8 @@ export const postProducts = <ThrowOnError extends boolean = false>(options: Opti
  * Delete a product
  * Soft deletes a product by marking it as deleted. Products with active variants cannot be deleted.
  */
-export const deleteProductsById = <ThrowOnError extends boolean = false>(options: Options<DeleteProductsByIdData, ThrowOnError>) => {
-    return (options.client ?? client).delete<DeleteProductsByIdResponses, DeleteProductsByIdErrors, ThrowOnError>({
+export const deleteApiV1ProductsById = <ThrowOnError extends boolean = false>(options: Options<DeleteApiV1ProductsByIdData, ThrowOnError>) => {
+    return (options.client ?? client).delete<DeleteApiV1ProductsByIdResponses, DeleteApiV1ProductsByIdErrors, ThrowOnError>({
         responseType: 'json',
         security: [
             {
@@ -95,7 +183,7 @@ export const deleteProductsById = <ThrowOnError extends boolean = false>(options
                 type: 'http'
             }
         ],
-        url: '/products/{id}',
+        url: '/api/v1/products/{id}',
         ...options
     });
 };
@@ -104,8 +192,8 @@ export const deleteProductsById = <ThrowOnError extends boolean = false>(options
  * Get product by ID
  * Retrieves a specific product by its ID with optional related data inclusion
  */
-export const getProductsById = <ThrowOnError extends boolean = false>(options: Options<GetProductsByIdData, ThrowOnError>) => {
-    return (options.client ?? client).get<GetProductsByIdResponses, GetProductsByIdErrors, ThrowOnError>({
+export const getApiV1ProductsById = <ThrowOnError extends boolean = false>(options: Options<GetApiV1ProductsByIdData, ThrowOnError>) => {
+    return (options.client ?? client).get<GetApiV1ProductsByIdResponses, GetApiV1ProductsByIdErrors, ThrowOnError>({
         responseType: 'json',
         security: [
             {
@@ -113,7 +201,7 @@ export const getProductsById = <ThrowOnError extends boolean = false>(options: O
                 type: 'http'
             }
         ],
-        url: '/products/{id}',
+        url: '/api/v1/products/{id}',
         ...options
     });
 };
@@ -122,8 +210,8 @@ export const getProductsById = <ThrowOnError extends boolean = false>(options: O
  * Update an existing product
  * Updates an existing product with the provided details. Only provided fields will be updated.
  */
-export const putProductsById = <ThrowOnError extends boolean = false>(options: Options<PutProductsByIdData, ThrowOnError>) => {
-    return (options.client ?? client).put<PutProductsByIdResponses, PutProductsByIdErrors, ThrowOnError>({
+export const putApiV1ProductsById = <ThrowOnError extends boolean = false>(options: Options<PutApiV1ProductsByIdData, ThrowOnError>) => {
+    return (options.client ?? client).put<PutApiV1ProductsByIdResponses, PutApiV1ProductsByIdErrors, ThrowOnError>({
         responseType: 'json',
         security: [
             {
@@ -131,7 +219,7 @@ export const putProductsById = <ThrowOnError extends boolean = false>(options: O
                 type: 'http'
             }
         ],
-        url: '/products/{id}',
+        url: '/api/v1/products/{id}',
         ...options,
         headers: {
             'Content-Type': 'application/json',

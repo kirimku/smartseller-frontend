@@ -40,6 +40,11 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 // Demo Components
 import { ErrorHandlingDemo } from "./components/ErrorHandlingDemo";
 
+// Debug helper (only in development)
+if (import.meta.env.DEV) {
+  import('./debug-auth-helper');
+}
+
 // Layouts
 import PlatformLayout from './platform/components/PlatformLayout';
 
