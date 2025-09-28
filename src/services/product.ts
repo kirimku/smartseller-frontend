@@ -94,7 +94,7 @@ export class ProductService {
         query: queryParams,
       });
 
-      if (!response.data?.success || !response.data?.data) {
+      if (!response.data?.success) {
         throw new ProductServiceError(
           response.data?.message || 'Failed to fetch products',
           'FETCH_FAILED',
@@ -102,16 +102,48 @@ export class ProductService {
         );
       }
 
+      // Handle the actual API response structure: response.data contains the data directly
+      const responseData = response.data as {
+        success: boolean;
+        message?: string;
+        data?: {
+          products?: ProductListItem[];
+          pagination?: {
+            total?: number;
+            limit?: number;
+            page?: number;
+            total_pages?: number;
+            has_next?: boolean;
+            has_prev?: boolean;
+          };
+          filters_applied?: Record<string, unknown>;
+           summary?: Record<string, string | number>;
+        };
+      };
+      
+      const apiData = responseData?.data;
+      if (!apiData) {
+        throw new ProductServiceError(
+          'No data received from API',
+          'NO_DATA',
+          response.status
+        );
+      }
+
       const result: ProductListResult = {
-        products: response.data.data.data,
+        products: apiData.products || [],
         pagination: {
-          total: response.data.data.meta.total || 0,
-          per_page: response.data.data.meta.per_page || 20,
-          current_page: response.data.data.meta.current_page || 1,
-          last_page: response.data.data.meta.last_page || 1,
-          from: response.data.data.meta.from,
-          to: response.data.data.meta.to,
-          has_more_pages: response.data.data.meta.has_more_pages || false,
+          total: apiData.pagination?.total || 0,
+          per_page: apiData.pagination?.limit || 20,
+          current_page: apiData.pagination?.page || 1,
+          last_page: apiData.pagination?.total_pages || 1,
+          from: apiData.pagination?.page && apiData.pagination?.limit 
+            ? ((apiData.pagination.page - 1) * apiData.pagination.limit) + 1 
+            : null,
+          to: apiData.pagination?.page && apiData.pagination?.limit && apiData.pagination?.total
+            ? Math.min(apiData.pagination.page * apiData.pagination.limit, apiData.pagination.total)
+            : null,
+          has_more_pages: apiData.pagination?.has_next || false,
         },
       };
 
