@@ -25,6 +25,14 @@ import { SessionWarnings } from "./components/auth/SessionWarnings";
 // Platform admin pages only
 import NotFound from "./pages/NotFound";
 
+// Admin pages
+import AdminLayout from "./platform/pages/AdminLayout";
+import AdminDashboard from "./platform/pages/AdminDashboard";
+import AdminProducts from "./platform/pages/AdminProducts";
+import AdminUsers from "./platform/pages/AdminUsers";
+import AdminOrders from "./platform/pages/AdminOrders";
+import WarrantyProgram from "./platform/pages/WarrantyProgram";
+
 // Error Boundary
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
@@ -42,6 +50,7 @@ const LoadingSpinner: React.FC = () => (
 );
 
 const App: React.FC = () => {
+  console.log('🚀 App loaded - PWA Update Test v2.0 - VitePWA Fixed!');
   return (
     <ErrorBoundary
       onError={(error, errorInfo) => {
@@ -71,7 +80,7 @@ const App: React.FC = () => {
                 <Route path="/" element={<PlatformLanding />} />
                 <Route path="/login" element={<PlatformLogin />} />
                 
-                {/* Dashboard - Protected Route */}
+                {/* Dashboard - Protected Route (renders admin content) */}
                 <Route 
                   path="/dashboard" 
                   element={
@@ -84,13 +93,17 @@ const App: React.FC = () => {
                         onConcurrentSessionDetected={() => console.log('Concurrent session detected')}
                         onUnauthorizedAccess={(reason) => console.log('Unauthorized access:', reason)}
                       >
-                        <PlatformLayout>
-                          <PlatformDashboard />
-                        </PlatformLayout>
+                        <AdminLayout />
                       </RouteGuard>
                     </ProtectedRoute>
-                  } 
-                />
+                  }
+                >
+                  <Route index element={<AdminDashboard />} />
+                  <Route path="products" element={<AdminProducts />} />
+                  <Route path="users" element={<AdminUsers />} />
+                  <Route path="orders" element={<AdminOrders />} />
+                  <Route path="warranty" element={<WarrantyProgram />} />
+                </Route>
                 
                 {/* Demo Route - Protected for authenticated users only */}
                 <Route 
@@ -101,6 +114,31 @@ const App: React.FC = () => {
                     </ProtectedRoute>
                   } 
                 />
+
+                {/* Admin Routes - Protected */}
+                <Route 
+                  path="/admin" 
+                  element={
+                    <ProtectedRoute>
+                      <RouteGuard 
+                        requiredRole="platform_admin"
+                        maxConcurrentSessions={3}
+                        sessionTimeoutMinutes={30}
+                        onSessionTimeout={() => console.log('Session timeout')}
+                        onConcurrentSessionDetected={() => console.log('Concurrent session detected')}
+                        onUnauthorizedAccess={(reason) => console.log('Unauthorized access:', reason)}
+                      >
+                        <AdminLayout />
+                      </RouteGuard>
+                    </ProtectedRoute>
+                  }
+                >
+                  <Route index element={<AdminDashboard />} />
+                  <Route path="products" element={<AdminProducts />} />
+                  <Route path="users" element={<AdminUsers />} />
+                  <Route path="orders" element={<AdminOrders />} />
+                  <Route path="warranty" element={<WarrantyProgram />} />
+                </Route>
                 
                 {/* Legacy redirects */}
                 <Route path="/platform" element={<Navigate to="/" replace />} />

@@ -21,7 +21,9 @@ import {
   Star,
   Gift,
   Calendar,
-  MessageSquare
+  MessageSquare,
+  Plus,
+  Shield
 } from "lucide-react";
 
 // Mock data
@@ -228,6 +230,100 @@ export default function AdminDashboard() {
             </Card>
           );
         })}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Product Management Section */}
+        <Card className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-semibold text-gray-900">Product Management</h3>
+            <Button variant="outline" size="sm">
+              <Package className="h-4 w-4 mr-2" />
+              Manage Products
+            </Button>
+          </div>
+          
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
+              <div>
+                <h4 className="font-medium text-gray-900">Total Products</h4>
+                <p className="text-2xl font-bold text-blue-600">156</p>
+              </div>
+              <Package className="h-8 w-8 text-blue-600" />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-3 bg-green-50 rounded-lg text-center">
+                <p className="text-sm text-gray-600">In Stock</p>
+                <p className="text-lg font-semibold text-green-600">142</p>
+              </div>
+              <div className="p-3 bg-red-50 rounded-lg text-center">
+                <p className="text-sm text-gray-600">Low Stock</p>
+                <p className="text-lg font-semibold text-red-600">14</p>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <h5 className="font-medium text-gray-900">Quick Actions</h5>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" className="flex-1">
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add Product
+                </Button>
+                <Button size="sm" variant="outline" className="flex-1">
+                  <Eye className="h-4 w-4 mr-1" />
+                  View All
+                </Button>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        {/* Warranty Management Section */}
+        <Card className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-semibold text-gray-900">Warranty Management</h3>
+            <Button variant="outline" size="sm">
+              <Shield className="h-4 w-4 mr-2" />
+              Manage Warranties
+            </Button>
+          </div>
+          
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg">
+              <div>
+                <h4 className="font-medium text-gray-900">Active Warranties</h4>
+                <p className="text-2xl font-bold text-green-600">1,247</p>
+              </div>
+              <Shield className="h-8 w-8 text-green-600" />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-3 bg-yellow-50 rounded-lg text-center">
+                <p className="text-sm text-gray-600">Pending Claims</p>
+                <p className="text-lg font-semibold text-yellow-600">5</p>
+              </div>
+              <div className="p-3 bg-blue-50 rounded-lg text-center">
+                <p className="text-sm text-gray-600">In Repair</p>
+                <p className="text-lg font-semibold text-blue-600">3</p>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <h5 className="font-medium text-gray-900">Recent Claims</h5>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-600">WC-2024-08-001</span>
+                  <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-600">WC-2024-08-002</span>
+                  <Badge className="bg-blue-100 text-blue-800">In Repair</Badge>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

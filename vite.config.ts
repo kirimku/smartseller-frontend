@@ -19,6 +19,12 @@ export default defineConfig(({ mode }) => {
       // Force service worker update when new version is available
       skipWaiting: true,
       clientsClaim: true,
+      // Enable service worker in development mode
+      devOptions: {
+        enabled: true,
+        type: 'module',
+        navigateFallback: 'index.html',
+      },
       workbox: {
         globPatterns: ['**/*.{js,css,ico,png,svg,jpg,jpeg,gif,webp,woff,woff2,ttf,eot}'],
         // Exclude index.html from precaching to prevent stale cache issues
