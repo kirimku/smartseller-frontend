@@ -28,7 +28,8 @@ import {
   Globe,
   Share2,
   Award,
-  Warehouse
+  Warehouse,
+  QrCode
 } from "lucide-react";
 
 const sidebarItems = [
@@ -48,6 +49,12 @@ const sidebarItems = [
     title: "Product",
     icon: Package,
     href: "/admin/products",
+    badge: null
+  },
+  {
+    title: "Barcode Management",
+    icon: QrCode,
+    href: "/admin/barcodes",
     badge: null
   },
   {
@@ -231,6 +238,7 @@ export default function AdminLayout() {
                 {location.pathname === "/admin" ? "Dashboard" : 
                  location.pathname === "/admin/users" ? "User Management" :
                  location.pathname === "/admin/products" ? "Product Management" :
+                 location.pathname === "/admin/barcodes" ? "Barcode Management" :
                  location.pathname === "/admin/orders" ? "Order Management" :
                  location.pathname === "/admin/tracking" ? "Tracking & Delivery" :
                  location.pathname === "/admin/marketplace" ? "Marketplace Integration" :

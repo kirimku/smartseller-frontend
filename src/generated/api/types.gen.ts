@@ -598,6 +598,200 @@ export type ProductListResponse = {
     meta: PaginationMeta;
 };
 
+export type CreateVariantOptionRequest = {
+    /**
+     * Name of the variant option (e.g., "Size", "Color")
+     */
+    option_name: string;
+    /**
+     * Array of possible values for this option
+     */
+    option_values: Array<string>;
+};
+
+export type VariantOptionResponse = {
+    /**
+     * Variant option unique identifier
+     */
+    id: string;
+    /**
+     * Product ID this option belongs to
+     */
+    product_id: string;
+    /**
+     * Name of the variant option
+     */
+    option_name: string;
+    /**
+     * Array of possible values for this option
+     */
+    option_values: Array<string>;
+    /**
+     * Option creation timestamp
+     */
+    created_at: string;
+    /**
+     * Option last update timestamp
+     */
+    updated_at: string;
+};
+
+export type CreateVariantRequest = {
+    /**
+     * Key-value pairs of option names and selected values
+     */
+    variant_options: {
+        [key: string]: string;
+    };
+    /**
+     * Stock Keeping Unit for this variant
+     */
+    sku: string;
+    /**
+     * Base price for this variant
+     */
+    base_price: number;
+    /**
+     * Sale price (optional, defaults to base_price)
+     */
+    sale_price?: number | null;
+    /**
+     * Cost price for profit calculations
+     */
+    cost_price?: number | null;
+    /**
+     * Available stock quantity
+     */
+    stock_quantity: number;
+    /**
+     * Product weight in kg
+     */
+    weight?: number | null;
+    /**
+     * Product dimensions
+     */
+    dimensions?: {
+        length?: number;
+        width?: number;
+        height?: number;
+    } | null;
+    /**
+     * Whether this variant is active
+     */
+    is_active?: boolean;
+};
+
+export type ProductVariantResponse = {
+    /**
+     * Variant unique identifier
+     */
+    id: string;
+    /**
+     * Product ID this variant belongs to
+     */
+    product_id: string;
+    /**
+     * Key-value pairs of option names and selected values
+     */
+    variant_options: {
+        [key: string]: string;
+    };
+    /**
+     * Stock Keeping Unit for this variant
+     */
+    sku: string;
+    /**
+     * Base price for this variant
+     */
+    base_price: number;
+    /**
+     * Sale price
+     */
+    sale_price?: number | null;
+    /**
+     * Cost price
+     */
+    cost_price?: number | null;
+    /**
+     * Available stock quantity
+     */
+    stock_quantity: number;
+    /**
+     * Product weight in kg
+     */
+    weight?: number | null;
+    /**
+     * Product dimensions
+     */
+    dimensions?: {
+        length?: number;
+        width?: number;
+        height?: number;
+    } | null;
+    /**
+     * Whether this variant is active
+     */
+    is_active: boolean;
+    /**
+     * Variant creation timestamp
+     */
+    created_at: string;
+    /**
+     * Variant last update timestamp
+     */
+    updated_at: string;
+};
+
+export type GenerateVariantsRequest = {
+    /**
+     * Base price for all generated variants
+     */
+    base_price: number;
+    /**
+     * Sale price for all generated variants
+     */
+    sale_price?: number | null;
+    /**
+     * Cost price for all generated variants
+     */
+    cost_price?: number | null;
+    /**
+     * Stock quantity for all generated variants
+     */
+    stock_quantity: number;
+    /**
+     * Weight for all generated variants
+     */
+    weight?: number | null;
+    /**
+     * Price adjustments for specific option values
+     */
+    price_adjustments?: {
+        [key: string]: {
+            [key: string]: number;
+        };
+    } | null;
+};
+
+export type GenerateVariantsResponse = {
+    /**
+     * Number of variants successfully created
+     */
+    variants_created: number;
+    /**
+     * Total possible combinations
+     */
+    total_combinations: number;
+    /**
+     * Number of combinations skipped (duplicates)
+     */
+    skipped_combinations: number;
+    /**
+     * List of created variant IDs
+     */
+    created_variants?: Array<string>;
+};
+
 /**
  * Customer ID
  */
@@ -881,6 +1075,86 @@ export type PostCustomersRegisterResponses = {
 
 export type PostCustomersRegisterResponse = PostCustomersRegisterResponses[keyof PostCustomersRegisterResponses];
 
+export type GetApiV1CategoriesData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Filter by parent category ID (use 'null' for root categories)
+         */
+        parent_id?: string;
+        /**
+         * Filter by active status
+         */
+        is_active?: boolean;
+        /**
+         * Search categories by name or description
+         */
+        search?: string;
+        /**
+         * Include child categories in response
+         */
+        include_children?: boolean;
+        /**
+         * Include product count for each category
+         */
+        include_products?: boolean;
+        /**
+         * Maximum depth for hierarchical results
+         */
+        max_depth?: number;
+        /**
+         * Page number for pagination
+         */
+        page?: number;
+        /**
+         * Number of items per page
+         */
+        page_size?: number;
+    };
+    url: '/api/v1/categories';
+};
+
+export type GetApiV1CategoriesErrors = {
+    /**
+     * Bad Request - Validation errors
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized - Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type GetApiV1CategoriesError = GetApiV1CategoriesErrors[keyof GetApiV1CategoriesErrors];
+
+export type GetApiV1CategoriesResponses = {
+    /**
+     * Categories retrieved successfully
+     */
+    200: {
+        success?: boolean;
+        message?: string;
+        data?: Array<{
+            id?: string;
+            name?: string;
+            description?: string | null;
+            slug?: string;
+            parent_id?: string | null;
+            is_active?: boolean;
+            product_count?: number;
+            children_count?: number;
+        }>;
+        meta?: PaginationMeta;
+    };
+};
+
+export type GetApiV1CategoriesResponse = GetApiV1CategoriesResponses[keyof GetApiV1CategoriesResponses];
+
 export type GetApiV1ProductsData = {
     body?: never;
     path?: never;
@@ -1150,6 +1424,156 @@ export type PutApiV1ProductsByIdResponses = {
 };
 
 export type PutApiV1ProductsByIdResponse = PutApiV1ProductsByIdResponses[keyof PutApiV1ProductsByIdResponses];
+
+export type PostApiV1ProductsByProductIdVariantOptionsData = {
+    body: CreateVariantOptionRequest;
+    path: {
+        /**
+         * Product ID
+         */
+        product_id: string;
+    };
+    query?: never;
+    url: '/api/v1/products/{product_id}/variant-options';
+};
+
+export type PostApiV1ProductsByProductIdVariantOptionsErrors = {
+    /**
+     * Bad Request - Validation errors
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized - Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found - Resource doesn't exist
+     */
+    404: ErrorResponse;
+    /**
+     * Conflict - Resource already exists
+     */
+    409: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type PostApiV1ProductsByProductIdVariantOptionsError = PostApiV1ProductsByProductIdVariantOptionsErrors[keyof PostApiV1ProductsByProductIdVariantOptionsErrors];
+
+export type PostApiV1ProductsByProductIdVariantOptionsResponses = {
+    /**
+     * Variant option created successfully
+     */
+    201: {
+        success?: boolean;
+        message?: string;
+        data?: VariantOptionResponse;
+    };
+};
+
+export type PostApiV1ProductsByProductIdVariantOptionsResponse = PostApiV1ProductsByProductIdVariantOptionsResponses[keyof PostApiV1ProductsByProductIdVariantOptionsResponses];
+
+export type PostApiV1ProductsByProductIdVariantsData = {
+    body: CreateVariantRequest;
+    path: {
+        /**
+         * Product ID
+         */
+        product_id: string;
+    };
+    query?: never;
+    url: '/api/v1/products/{product_id}/variants';
+};
+
+export type PostApiV1ProductsByProductIdVariantsErrors = {
+    /**
+     * Bad Request - Validation errors
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized - Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found - Resource doesn't exist
+     */
+    404: ErrorResponse;
+    /**
+     * Conflict - Resource already exists
+     */
+    409: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type PostApiV1ProductsByProductIdVariantsError = PostApiV1ProductsByProductIdVariantsErrors[keyof PostApiV1ProductsByProductIdVariantsErrors];
+
+export type PostApiV1ProductsByProductIdVariantsResponses = {
+    /**
+     * Product variant created successfully
+     */
+    201: {
+        success?: boolean;
+        message?: string;
+        data?: ProductVariantResponse;
+    };
+};
+
+export type PostApiV1ProductsByProductIdVariantsResponse = PostApiV1ProductsByProductIdVariantsResponses[keyof PostApiV1ProductsByProductIdVariantsResponses];
+
+export type PostApiV1ProductsByProductIdVariantsGenerateData = {
+    body: GenerateVariantsRequest;
+    path: {
+        /**
+         * Product ID
+         */
+        product_id: string;
+    };
+    query?: never;
+    url: '/api/v1/products/{product_id}/variants/generate';
+};
+
+export type PostApiV1ProductsByProductIdVariantsGenerateErrors = {
+    /**
+     * Bad Request - Validation errors
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized - Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * Not Found - Resource doesn't exist
+     */
+    404: ErrorResponse;
+    /**
+     * Conflict - Resource already exists
+     */
+    409: ErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: ErrorResponse;
+};
+
+export type PostApiV1ProductsByProductIdVariantsGenerateError = PostApiV1ProductsByProductIdVariantsGenerateErrors[keyof PostApiV1ProductsByProductIdVariantsGenerateErrors];
+
+export type PostApiV1ProductsByProductIdVariantsGenerateResponses = {
+    /**
+     * Product variants generated successfully
+     */
+    201: {
+        success?: boolean;
+        message?: string;
+        data?: GenerateVariantsResponse;
+    };
+};
+
+export type PostApiV1ProductsByProductIdVariantsGenerateResponse = PostApiV1ProductsByProductIdVariantsGenerateResponses[keyof PostApiV1ProductsByProductIdVariantsGenerateResponses];
 
 export type GetCustomersByIdData = {
     body?: never;

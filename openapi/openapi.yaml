@@ -85,6 +85,43 @@ paths:
   
   /api/v1/products/{id}:
     $ref: './product-endpoints.yaml#/paths/~1api~1v1~1products~1{id}'
+  
+  /api/v1/products/{product_id}/variant-options:
+    $ref: './product-endpoints.yaml#/paths/~1api~1v1~1products~1{product_id}~1variant-options'
+  
+  /api/v1/products/{product_id}/variants:
+    $ref: './product-endpoints.yaml#/paths/~1api~1v1~1products~1{product_id}~1variants'
+  
+  /api/v1/products/{product_id}/variants/generate:
+    $ref: './product-endpoints.yaml#/paths/~1api~1v1~1products~1{product_id}~1variants~1generate'
+
+  # Category management endpoints
+  /api/v1/categories:
+    $ref: './category-endpoints.yaml#/paths/~1api~1v1~1categories'
+  
+  /api/v1/categories/{category_id}:
+    $ref: './category-endpoints.yaml#/paths/~1api~1v1~1categories~1{category_id}'
+  
+  /api/v1/categories/tree:
+    $ref: './category-endpoints.yaml#/paths/~1api~1v1~1categories~1tree'
+  
+  /api/v1/categories/{category_id}/move:
+    $ref: './category-endpoints.yaml#/paths/~1api~1v1~1categories~1{category_id}~1move'
+  
+  /api/v1/categories/{category_id}/activate:
+    $ref: './category-endpoints.yaml#/paths/~1api~1v1~1categories~1{category_id}~1activate'
+  
+  /api/v1/categories/{category_id}/deactivate:
+    $ref: './category-endpoints.yaml#/paths/~1api~1v1~1categories~1{category_id}~1deactivate'
+  
+  /api/v1/categories/bulk:
+    $ref: './category-endpoints.yaml#/paths/~1api~1v1~1categories~1bulk'
+  
+  /api/v1/storefront/{slug}/categories:
+    $ref: './category-endpoints.yaml#/paths/~1api~1v1~1storefront~1{slug}~1categories'
+  
+  /api/v1/storefront/{slug}/categories/{category_id}:
+    $ref: './category-endpoints.yaml#/paths/~1api~1v1~1storefront~1{slug}~1categories~1{category_id}'
 
   # Admin Warranty Management endpoints
   /api/v1/admin/warranty/barcodes:
@@ -163,6 +200,10 @@ tags:
     description: User profile and account management
   - name: Products
     description: Product catalog management
+  - name: Product Categories
+    description: Product category management and hierarchy
+  - name: Storefront Categories
+    description: Public storefront category endpoints
   - name: Warranty Admin
     description: Administrative warranty management endpoints
   - name: Warranty Public

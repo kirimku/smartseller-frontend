@@ -46,6 +46,56 @@ export const ValidationMessages = {
   INVALID_FILE_TYPE: (allowedTypes: string[]) => `File type must be one of: ${allowedTypes.join(', ')}`,
 } as const;
 
+// Variant option schema
+const VariantOptionSchema = z.object({
+  name: z
+    .string()
+    .min(1, ValidationMessages.REQUIRED)
+    .min(2, ValidationMessages.MIN_LENGTH(2))
+    .max(50, ValidationMessages.MAX_LENGTH(50)),
+  values: z
+    .array(z.string().min(1, ValidationMessages.REQUIRED))
+    .min(1, 'At least one value is required')
+    .max(20, 'Maximum 20 values allowed'),
+});
+
+// Individual variant schema
+const VariantSchema = z.object({
+  combination: z.record(z.string()),
+  sku: z
+    .string()
+    .min(1, ValidationMessages.REQUIRED)
+    .refine(
+      (val) => ValidationPatterns.SKU.test(val),
+      ValidationMessages.INVALID_SKU
+    ),
+  price: z
+    .number()
+    .positive(ValidationMessages.POSITIVE_NUMBER)
+    .max(999999.99, ValidationMessages.MAX_VALUE(999999.99)),
+  stock_quantity: z
+    .number()
+    .int('Stock quantity must be a whole number')
+    .min(0, ValidationMessages.MIN_VALUE(0))
+    .max(999999, ValidationMessages.MAX_VALUE(999999)),
+  weight: z
+    .union([z.string(), z.number()])
+    .transform((val) => {
+      if (typeof val === 'string') {
+        const parsed = parseFloat(val);
+        return isNaN(parsed) ? undefined : parsed;
+      }
+      return val;
+    })
+    .pipe(
+      z.number()
+        .positive(ValidationMessages.POSITIVE_NUMBER)
+        .max(999999, ValidationMessages.MAX_VALUE(999999))
+    )
+    .optional(),
+  is_active: z.boolean().optional(),
+});
+
 // Zod schema for product form validation
 export const ProductFormSchema = z.object({
   name: z
@@ -62,17 +112,28 @@ export const ProductFormSchema = z.object({
     .max(2000, ValidationMessages.MAX_LENGTH(2000)),
   
   price: z
-    .number()
-    .positive(ValidationMessages.POSITIVE_NUMBER)
-    .max(999999.99, ValidationMessages.MAX_VALUE(999999.99))
-    .refine(
-      (val) => ValidationPatterns.PRICE.test(val.toString()),
-      ValidationMessages.INVALID_PRICE
+    .union([z.string(), z.number()])
+    .transform((val) => {
+      if (typeof val === 'string') {
+        const parsed = parseFloat(val);
+        return isNaN(parsed) ? 0 : parsed;
+      }
+      return val;
+    })
+    .pipe(
+      z.number()
+        .positive(ValidationMessages.POSITIVE_NUMBER)
+        .max(999999.99, ValidationMessages.MAX_VALUE(999999.99))
+        .refine(
+          (val) => ValidationPatterns.PRICE.test(val.toString()),
+          ValidationMessages.INVALID_PRICE
+        )
     ),
   
   category_id: z
     .string()
-    .min(1, ValidationMessages.REQUIRED),
+    .min(1, ValidationMessages.REQUIRED)
+    .uuid('Category ID must be a valid UUID'),
   
   sku: z
     .string()
@@ -83,10 +144,20 @@ export const ProductFormSchema = z.object({
     ),
   
   stock_quantity: z
-    .number()
-    .int('Stock quantity must be a whole number')
-    .min(0, ValidationMessages.MIN_VALUE(0))
-    .max(999999, ValidationMessages.MAX_VALUE(999999))
+    .union([z.string(), z.number()])
+    .transform((val) => {
+      if (typeof val === 'string') {
+        const parsed = parseInt(val);
+        return isNaN(parsed) ? 0 : parsed;
+      }
+      return val;
+    })
+    .pipe(
+      z.number()
+        .int('Stock quantity must be a whole number')
+        .min(0, ValidationMessages.MIN_VALUE(0))
+        .max(999999, ValidationMessages.MAX_VALUE(999999))
+    )
     .optional(),
   
   weight: z
@@ -125,7 +196,43 @@ export const ProductFormSchema = z.object({
     .optional(),
   
   is_active: z.boolean().optional(),
-});
+  
+  // Variant-related fields
+  enable_variants: z.boolean().optional(),
+  auto_generate_variants: z.boolean().optional(),
+  variant_options: z
+    .array(VariantOptionSchema)
+    .max(5, 'Maximum 5 variant options allowed')
+    .optional(),
+  variants: z
+    .array(VariantSchema)
+    .max(100, 'Maximum 100 variants allowed')
+    .optional(),
+}).refine(
+  (data) => {
+    // If variants are enabled, variant options are required
+    if (data.enable_variants && (!data.variant_options || data.variant_options.length === 0)) {
+      return false;
+    }
+    return true;
+  },
+  {
+    message: 'Variant options are required when variants are enabled',
+    path: ['variant_options'],
+  }
+).refine(
+  (data) => {
+    // If auto-generate is disabled and variants are enabled, manual variants are required
+    if (data.enable_variants && !data.auto_generate_variants && (!data.variants || data.variants.length === 0)) {
+      return false;
+    }
+    return true;
+  },
+  {
+    message: 'Manual variants are required when auto-generation is disabled',
+    path: ['variants'],
+  }
+);
 
 // Schema for product list filters
 export const ProductListFiltersSchema = z.object({

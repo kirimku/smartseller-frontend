@@ -1,10 +1,11 @@
-import React, { Suspense } from 'react';
+import React, { Suspense, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from "./shared/components/ui/toaster";
 import { Toaster as Sonner } from "./shared/components/ui/sonner";
 import { TooltipProvider } from "./shared/components/ui/tooltip";
 import { Button } from "./shared/components/ui/button";
 import PWAInstallPrompt from "./shared/components/common/PWAInstallPrompt";
+import { initializeSecureApi } from "./lib/secure-api-integration";
 
 // Context Providers
 import { AuthProvider } from "./contexts/AuthContext";
@@ -33,6 +34,7 @@ import AdminUsers from "./platform/pages/AdminUsers";
 import AdminOrders from "./platform/pages/AdminOrders";
 import WarrantyProgram from "./platform/pages/WarrantyProgram";
 import ProductManagement from "./pages/ProductManagement";
+import BarcodeManagement from "./pages/BarcodeManagement";
 
 // Error Boundary
 import { ErrorBoundary } from "./components/ErrorBoundary";
@@ -57,6 +59,18 @@ const LoadingSpinner: React.FC = () => (
 
 const App: React.FC = () => {
   console.log('🚀 App loaded - PWA Update Test v2.0 - VitePWA Fixed!');
+  
+  // Initialize secure API integration on app startup
+  useEffect(() => {
+    console.log('🔐 [App] Initializing secure API integration...');
+    try {
+      initializeSecureApi();
+      console.log('🔐 [App] Secure API integration initialized successfully');
+    } catch (error) {
+      console.error('🔐 [App] Failed to initialize secure API integration:', error);
+    }
+  }, []);
+  
   return (
     <ErrorBoundary
       onError={(error, errorInfo) => {
@@ -91,10 +105,10 @@ const App: React.FC = () => {
                   path="/dashboard" 
                   element={
                     <ProtectedRoute>
-                      <RouteGuard 
-                        requiredRole="platform_admin"
-                        maxConcurrentSessions={3}
-                        sessionTimeoutMinutes={30}
+                      <RouteGuard
+                  requiredTenantRole="admin"
+                  maxConcurrentSessions={3}
+                  sessionTimeoutMinutes={30}
                         onSessionTimeout={() => console.log('Session timeout')}
                         onConcurrentSessionDetected={() => console.log('Concurrent session detected')}
                         onUnauthorizedAccess={(reason) => console.log('Unauthorized access:', reason)}
@@ -127,7 +141,7 @@ const App: React.FC = () => {
                   element={
                     <ProtectedRoute>
                       <RouteGuard 
-                        requiredRole="platform_admin"
+                        requiredTenantRole="admin"
                         maxConcurrentSessions={3}
                         sessionTimeoutMinutes={30}
                         onSessionTimeout={() => console.log('Session timeout')}
@@ -144,6 +158,7 @@ const App: React.FC = () => {
                   <Route path="users" element={<AdminUsers />} />
                   <Route path="orders" element={<AdminOrders />} />
                   <Route path="warranty" element={<WarrantyProgram />} />
+                  <Route path="barcodes" element={<BarcodeManagement />} />
                 </Route>
                 
                 {/* Legacy redirects */}

@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { DeleteAddressesByIdData, DeleteAddressesByIdErrors, DeleteAddressesByIdResponses, DeleteApiV1ProductsByIdData, DeleteApiV1ProductsByIdErrors, DeleteApiV1ProductsByIdResponses, DeleteStorefrontsByIdData, DeleteStorefrontsByIdErrors, DeleteStorefrontsByIdResponses, GetAddressesByIdData, GetAddressesByIdErrors, GetAddressesByIdResponses, GetApiV1ProductsByIdData, GetApiV1ProductsByIdErrors, GetApiV1ProductsByIdResponses, GetApiV1ProductsData, GetApiV1ProductsErrors, GetApiV1ProductsResponses, GetCustomersByIdAddressesData, GetCustomersByIdAddressesErrors, GetCustomersByIdAddressesResponses, GetCustomersByIdData, GetCustomersByIdErrors, GetCustomersByIdResponses, GetStorefrontsByIdData, GetStorefrontsByIdErrors, GetStorefrontsByIdResponses, GetStorefrontsSlugBySlugData, GetStorefrontsSlugBySlugErrors, GetStorefrontsSlugBySlugResponses, PostApiV1AuthForgotPasswordData, PostApiV1AuthForgotPasswordErrors, PostApiV1AuthForgotPasswordResponses, PostApiV1AuthLoginData, PostApiV1AuthLoginErrors, PostApiV1AuthLoginResponses, PostApiV1AuthLogoutData, PostApiV1AuthLogoutResponses, PostApiV1AuthRefreshData, PostApiV1AuthRefreshErrors, PostApiV1AuthRefreshResponses, PostApiV1AuthResetPasswordData, PostApiV1AuthResetPasswordErrors, PostApiV1AuthResetPasswordResponses, PostApiV1ProductsData, PostApiV1ProductsErrors, PostApiV1ProductsResponses, PostCustomersByIdAddressesData, PostCustomersByIdAddressesErrors, PostCustomersByIdAddressesResponses, PostCustomersRegisterData, PostCustomersRegisterErrors, PostCustomersRegisterResponses, PostStorefrontsData, PostStorefrontsErrors, PostStorefrontsResponses, PutApiV1ProductsByIdData, PutApiV1ProductsByIdErrors, PutApiV1ProductsByIdResponses, PutCustomersByIdData, PutCustomersByIdErrors, PutCustomersByIdResponses } from './types.gen';
+import type { DeleteAddressesByIdData, DeleteAddressesByIdErrors, DeleteAddressesByIdResponses, DeleteApiV1ProductsByIdData, DeleteApiV1ProductsByIdErrors, DeleteApiV1ProductsByIdResponses, DeleteStorefrontsByIdData, DeleteStorefrontsByIdErrors, DeleteStorefrontsByIdResponses, GetAddressesByIdData, GetAddressesByIdErrors, GetAddressesByIdResponses, GetApiV1CategoriesData, GetApiV1CategoriesErrors, GetApiV1CategoriesResponses, GetApiV1ProductsByIdData, GetApiV1ProductsByIdErrors, GetApiV1ProductsByIdResponses, GetApiV1ProductsData, GetApiV1ProductsErrors, GetApiV1ProductsResponses, GetCustomersByIdAddressesData, GetCustomersByIdAddressesErrors, GetCustomersByIdAddressesResponses, GetCustomersByIdData, GetCustomersByIdErrors, GetCustomersByIdResponses, GetStorefrontsByIdData, GetStorefrontsByIdErrors, GetStorefrontsByIdResponses, GetStorefrontsSlugBySlugData, GetStorefrontsSlugBySlugErrors, GetStorefrontsSlugBySlugResponses, PostApiV1AuthForgotPasswordData, PostApiV1AuthForgotPasswordErrors, PostApiV1AuthForgotPasswordResponses, PostApiV1AuthLoginData, PostApiV1AuthLoginErrors, PostApiV1AuthLoginResponses, PostApiV1AuthLogoutData, PostApiV1AuthLogoutResponses, PostApiV1AuthRefreshData, PostApiV1AuthRefreshErrors, PostApiV1AuthRefreshResponses, PostApiV1AuthResetPasswordData, PostApiV1AuthResetPasswordErrors, PostApiV1AuthResetPasswordResponses, PostApiV1ProductsByProductIdVariantOptionsData, PostApiV1ProductsByProductIdVariantOptionsErrors, PostApiV1ProductsByProductIdVariantOptionsResponses, PostApiV1ProductsByProductIdVariantsData, PostApiV1ProductsByProductIdVariantsErrors, PostApiV1ProductsByProductIdVariantsGenerateData, PostApiV1ProductsByProductIdVariantsGenerateErrors, PostApiV1ProductsByProductIdVariantsGenerateResponses, PostApiV1ProductsByProductIdVariantsResponses, PostApiV1ProductsData, PostApiV1ProductsErrors, PostApiV1ProductsResponses, PostCustomersByIdAddressesData, PostCustomersByIdAddressesErrors, PostCustomersByIdAddressesResponses, PostCustomersRegisterData, PostCustomersRegisterErrors, PostCustomersRegisterResponses, PostStorefrontsData, PostStorefrontsErrors, PostStorefrontsResponses, PutApiV1ProductsByIdData, PutApiV1ProductsByIdErrors, PutApiV1ProductsByIdResponses, PutCustomersByIdData, PutCustomersByIdErrors, PutCustomersByIdResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -131,6 +131,24 @@ export const postCustomersRegister = <ThrowOnError extends boolean = false>(opti
 };
 
 /**
+ * List product categories
+ * Retrieve a list of product categories with optional filtering and pagination
+ */
+export const getApiV1Categories = <ThrowOnError extends boolean = false>(options?: Options<GetApiV1CategoriesData, ThrowOnError>) => {
+    return (options?.client ?? client).get<GetApiV1CategoriesResponses, GetApiV1CategoriesErrors, ThrowOnError>({
+        responseType: 'json',
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/api/v1/categories',
+        ...options
+    });
+};
+
+/**
  * List products with filtering and pagination
  * Retrieves a paginated list of products with optional filtering, sorting, and search capabilities
  */
@@ -220,6 +238,96 @@ export const putApiV1ProductsById = <ThrowOnError extends boolean = false>(optio
             }
         ],
         url: '/api/v1/products/{id}',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+/**
+ * Create variant options for a product
+ * Creates variant options (like Size, Color) for a product. These options define the available
+ * variations that can be used to create product variants.
+ *
+ * **Business Rules:**
+ * - A product can have multiple variant options (e.g., Size and Color)
+ * - Each option can have multiple values (e.g., Size: S, M, L, XL)
+ * - Option names must be unique within a product
+ * - At least one option value must be provided
+ *
+ */
+export const postApiV1ProductsByProductIdVariantOptions = <ThrowOnError extends boolean = false>(options: Options<PostApiV1ProductsByProductIdVariantOptionsData, ThrowOnError>) => {
+    return (options.client ?? client).post<PostApiV1ProductsByProductIdVariantOptionsResponses, PostApiV1ProductsByProductIdVariantOptionsErrors, ThrowOnError>({
+        responseType: 'json',
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/api/v1/products/{product_id}/variant-options',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+/**
+ * Create a specific product variant
+ * Creates a single product variant with specific option combinations.
+ * Use this endpoint when you want to create variants individually with custom pricing and stock.
+ *
+ * **Business Rules:**
+ * - Variant option combinations must be unique within a product
+ * - All referenced variant options must exist for the product
+ * - SKU must be unique across all products and variants
+ * - Stock quantity cannot be negative
+ *
+ */
+export const postApiV1ProductsByProductIdVariants = <ThrowOnError extends boolean = false>(options: Options<PostApiV1ProductsByProductIdVariantsData, ThrowOnError>) => {
+    return (options.client ?? client).post<PostApiV1ProductsByProductIdVariantsResponses, PostApiV1ProductsByProductIdVariantsErrors, ThrowOnError>({
+        responseType: 'json',
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/api/v1/products/{product_id}/variants',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+/**
+ * Auto-generate multiple product variants
+ * Automatically generates all possible combinations of variant options for a product.
+ * This is useful when you want to create many variants at once with similar pricing.
+ *
+ * **Business Rules:**
+ * - Generates all combinations of existing variant options
+ * - Uses provided base pricing with optional adjustments per option
+ * - SKUs are auto-generated based on product SKU and option values
+ * - All generated variants start as active by default
+ *
+ */
+export const postApiV1ProductsByProductIdVariantsGenerate = <ThrowOnError extends boolean = false>(options: Options<PostApiV1ProductsByProductIdVariantsGenerateData, ThrowOnError>) => {
+    return (options.client ?? client).post<PostApiV1ProductsByProductIdVariantsGenerateResponses, PostApiV1ProductsByProductIdVariantsGenerateErrors, ThrowOnError>({
+        responseType: 'json',
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/api/v1/products/{product_id}/variants/generate',
         ...options,
         headers: {
             'Content-Type': 'application/json',

@@ -47,6 +47,9 @@ import {
   Hash,
   Ruler,
   Weight,
+  Settings,
+  Shuffle,
+  Tag,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -55,9 +58,12 @@ import {
   type ProductResponse,
   type CreateProductRequest,
   type UpdateProductRequest,
+  type VariantOptionFormData,
+  type VariantFormData,
 } from '../../shared/types/product-management';
 import { ProductFormSchema, ValidationHelpers, ValidationMessages } from '../../shared/utils/validation';
 import { productService } from '../../services/product';
+import { CategoryService } from '../../services/categoryService';
 
 // Use the comprehensive validation schema
 const productFormSchema = ProductFormSchema;
@@ -77,17 +83,7 @@ export interface ProductFormProps {
   autoSaveInterval?: number;
 }
 
-// Mock categories - in real app, this would come from an API
-const PRODUCT_CATEGORIES = [
-  { value: 'electronics', label: 'Electronics' },
-  { value: 'clothing', label: 'Clothing' },
-  { value: 'books', label: 'Books' },
-  { value: 'home-garden', label: 'Home & Garden' },
-  { value: 'sports', label: 'Sports & Outdoors' },
-  { value: 'toys', label: 'Toys & Games' },
-  { value: 'health', label: 'Health & Beauty' },
-  { value: 'automotive', label: 'Automotive' },
-];
+// Categories will be loaded from API
 
 export const ProductForm: React.FC<ProductFormProps> = ({
   product,
@@ -107,6 +103,38 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [uploadingImages, setUploadingImages] = useState<string[]>([]);
   const [fieldValidationErrors, setFieldValidationErrors] = useState<Record<string, string>>({});
+  
+  // Category state
+  const [categories, setCategories] = useState<Array<{ value: string; label: string }>>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [categoriesError, setCategoriesError] = useState<string | null>(null);
+
+  // Load categories on component mount
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        setCategoriesLoading(true);
+        setCategoriesError(null);
+        const categoryOptions = await CategoryService.getCategoriesForDropdown();
+        setCategories(categoryOptions);
+      } catch (error) {
+        console.error('Failed to load categories:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Failed to load categories';
+        setCategoriesError(errorMessage);
+        
+        // Show different toast messages based on error type
+        if (errorMessage.includes('Authentication required')) {
+          toast.error('Please log in to access categories');
+        } else {
+          toast.error('Failed to load categories');
+        }
+      } finally {
+        setCategoriesLoading(false);
+      }
+    };
+
+    loadCategories();
+  }, []);
 
   // Initialize form
   const form = useForm<ProductFormValues>({
@@ -207,6 +235,10 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         dimensions: data.dimensions,
         images: data.images,
         is_active: data.is_active,
+        enable_variants: data.enable_variants,
+        auto_generate_variants: data.auto_generate_variants,
+        variant_options: data.variant_options,
+        variants: data.variants,
       };
 
       if (onSubmit) {
@@ -222,6 +254,55 @@ export const ProductForm: React.FC<ProductFormProps> = ({
           toast.success('Product updated successfully');
         } else {
           throw new Error('Product ID is required for updates');
+        }
+
+        // Handle variant creation if variants are enabled
+        if (data.enable_variants && result.id) {
+          try {
+            // Step 1: Create variant options if they exist
+            if (data.variant_options && data.variant_options.length > 0) {
+              for (const option of data.variant_options) {
+                if (option.name && option.values && option.values.length > 0) {
+                  await productService.createVariantOptions(result.id, {
+                    name: option.name,
+                    values: option.values.filter(value => value.trim() !== ''),
+                  });
+                }
+              }
+              toast.success('Variant options created successfully');
+            }
+
+            // Step 2: Handle variant generation
+            if (data.auto_generate_variants && data.variant_options && data.variant_options.length > 0) {
+              // Auto-generate variants
+              const generateRequest = {
+                base_price: data.price,
+                base_stock: data.stock_quantity,
+                base_weight: data.weight,
+              };
+              
+              await productService.generateVariants(result.id, generateRequest);
+              toast.success('Product variants generated automatically');
+            } else if (data.variants && data.variants.length > 0) {
+              // Create manual variants
+              for (const variant of data.variants) {
+                if (variant.sku && variant.price !== undefined && variant.stock_quantity !== undefined) {
+                  await productService.createVariant(result.id, {
+                    combination: variant.combination || {},
+                    sku: variant.sku,
+                    price: variant.price,
+                    stock_quantity: variant.stock_quantity,
+                    weight: variant.weight,
+                    is_active: variant.is_active ?? true,
+                  });
+                }
+              }
+              toast.success('Product variants created successfully');
+            }
+          } catch (variantError) {
+            console.error('Variant creation failed:', variantError);
+            toast.error('Product created but variant creation failed. You can add variants later.');
+          }
         }
 
         setIsDirty(false);
@@ -325,6 +406,26 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+              {/* Validation Errors Display */}
+              {Object.keys(errors).length > 0 && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    <div className="space-y-1">
+                      <p className="font-medium">Please fix the following errors:</p>
+                      <ul className="list-disc list-inside space-y-1 text-sm">
+                        {Object.entries(errors).map(([field, error]) => (
+                          <li key={field}>
+                            <span className="font-medium capitalize">{field.replace('_', ' ')}:</span>{' '}
+                            {error?.message || 'Invalid value'}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              )}
+
               {/* Basic Information */}
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Basic Information</h3>
@@ -361,21 +462,48 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Category *</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} defaultValue={field.value} disabled={categoriesLoading}>
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select a category" />
+                              <SelectValue 
+                                placeholder={
+                                  categoriesLoading 
+                                    ? "Loading categories..." 
+                                    : categoriesError 
+                                      ? "Error loading categories" 
+                                      : "Select a category"
+                                } 
+                              />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {PRODUCT_CATEGORIES.map((category) => (
-                              <SelectItem key={category.value} value={category.value}>
-                                {category.label}
-                              </SelectItem>
-                            ))}
+                            {categoriesLoading ? (
+                              <div className="flex items-center justify-center gap-2 p-2 text-sm text-muted-foreground">
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                Loading categories...
+                              </div>
+                            ) : categoriesError ? (
+                              <div className="flex items-center justify-center gap-2 p-2 text-sm text-destructive">
+                                <AlertCircle className="h-4 w-4" />
+                                Failed to load categories
+                              </div>
+                            ) : categories.length === 0 ? (
+                              <div className="flex items-center justify-center p-2 text-sm text-muted-foreground">
+                                No categories available
+                              </div>
+                            ) : (
+                              categories.map((category) => (
+                                <SelectItem key={category.value} value={category.value}>
+                                  {category.label}
+                                </SelectItem>
+                              ))
+                            )}
                           </SelectContent>
                         </Select>
                         <FormMessage />
+                        {categoriesError && (
+                          <p className="text-sm text-destructive">{categoriesError}</p>
+                        )}
                       </FormItem>
                     )}
                   />
@@ -727,6 +855,403 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 />
               </div>
 
+              <Separator />
+
+              {/* Product Variants */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <Settings className="h-5 w-5" />
+                    Product Variants
+                  </h3>
+                </div>
+                
+                <FormField
+                  control={form.control}
+                  name="enable_variants"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>
+                          Enable Product Variants
+                        </FormLabel>
+                        <FormDescription>
+                          Create multiple variations of this product (e.g., different sizes, colors, materials)
+                        </FormDescription>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
+                {/* Variant Options Section */}
+                {watch('enable_variants') && (
+                  <div className="space-y-4 border rounded-lg p-4 bg-muted/20">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium flex items-center gap-2">
+                        <Tag className="h-4 w-4" />
+                        Variant Options
+                      </h4>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const currentOptions = watch('variant_options') || [];
+                          setValue('variant_options', [
+                            ...currentOptions,
+                            { name: '', values: [''] }
+                          ]);
+                        }}
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Option
+                      </Button>
+                    </div>
+
+                    <FormDescription>
+                      Define the types of variations for this product (e.g., Size, Color, Material)
+                    </FormDescription>
+
+                    {/* Variant Options List */}
+                    <div className="space-y-3">
+                      {(watch('variant_options') || []).map((option, optionIndex) => (
+                        <div key={optionIndex} className="border rounded-lg p-3 bg-background">
+                          <div className="flex items-center justify-between mb-3">
+                            <FormField
+                              control={form.control}
+                              name={`variant_options.${optionIndex}.name`}
+                              render={({ field }) => (
+                                <FormItem className="flex-1 mr-2">
+                                  <FormControl>
+                                    <Input
+                                      placeholder="Option name (e.g., Size, Color)"
+                                      {...field}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                const currentOptions = watch('variant_options') || [];
+                                const newOptions = currentOptions.filter((_, i) => i !== optionIndex);
+                                setValue('variant_options', newOptions);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+
+                          {/* Option Values */}
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium">Values</Label>
+                            {(option.values || ['']).map((value, valueIndex) => (
+                              <div key={valueIndex} className="flex items-center gap-2">
+                                <FormField
+                                  control={form.control}
+                                  name={`variant_options.${optionIndex}.values.${valueIndex}`}
+                                  render={({ field }) => (
+                                    <FormItem className="flex-1">
+                                      <FormControl>
+                                        <Input
+                                          placeholder="Value (e.g., Small, Red)"
+                                          {...field}
+                                        />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    const currentOptions = watch('variant_options') || [];
+                                    const newOptions = [...currentOptions];
+                                    if (newOptions[optionIndex]) {
+                                      newOptions[optionIndex].values = newOptions[optionIndex].values.filter((_, i) => i !== valueIndex);
+                                      setValue('variant_options', newOptions);
+                                    }
+                                  }}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ))}
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const currentOptions = watch('variant_options') || [];
+                                const newOptions = [...currentOptions];
+                                if (newOptions[optionIndex]) {
+                                  newOptions[optionIndex].values.push('');
+                                  setValue('variant_options', newOptions);
+                                }
+                              }}
+                            >
+                              <Plus className="h-4 w-4 mr-2" />
+                              Add Value
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Auto-generate Variants Option */}
+                    {(watch('variant_options') || []).length > 0 && (
+                      <div className="space-y-4 border-t pt-4">
+                        <FormField
+                          control={form.control}
+                          name="auto_generate_variants"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                              <div className="space-y-1 leading-none">
+                                <FormLabel>
+                                  Auto-generate Variants
+                                </FormLabel>
+                                <FormDescription>
+                                  Automatically create all possible combinations of variant options
+                                </FormDescription>
+                              </div>
+                            </FormItem>
+                          )}
+                        />
+
+                        {watch('auto_generate_variants') && (
+                          <Alert>
+                            <Shuffle className="h-4 w-4" />
+                            <AlertDescription>
+                              Variants will be automatically generated with default pricing and stock based on your base product settings. You can adjust individual variant details after creation.
+                            </AlertDescription>
+                          </Alert>
+                        )}
+
+                        {!watch('auto_generate_variants') && (watch('variant_options') || []).length > 0 && (
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <h5 className="font-medium">Manual Variants</h5>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  const currentVariants = watch('variants') || [];
+                                  setValue('variants', [
+                                    ...currentVariants,
+                                    {
+                                      combination: {},
+                                      sku: '',
+                                      price: watch('price') || 0,
+                                      stock_quantity: watch('stock_quantity') || 0,
+                                      weight: watch('weight'),
+                                      is_active: true,
+                                    }
+                                  ]);
+                                }}
+                              >
+                                <Plus className="h-4 w-4 mr-2" />
+                                Add Variant
+                              </Button>
+                            </div>
+
+                            <FormDescription>
+                              Manually create specific product variants with custom pricing and stock
+                            </FormDescription>
+
+                            {/* Manual Variants List */}
+                            <div className="space-y-3">
+                              {(watch('variants') || []).map((variant, variantIndex) => (
+                                <div key={variantIndex} className="border rounded-lg p-3 bg-background">
+                                  <div className="flex items-center justify-between mb-3">
+                                    <h6 className="font-medium">Variant {variantIndex + 1}</h6>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => {
+                                        const currentVariants = watch('variants') || [];
+                                        const newVariants = currentVariants.filter((_, i) => i !== variantIndex);
+                                        setValue('variants', newVariants);
+                                      }}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <FormField
+                                      control={form.control}
+                                      name={`variants.${variantIndex}.sku`}
+                                      render={({ field }) => (
+                                        <FormItem>
+                                          <FormLabel>SKU *</FormLabel>
+                                          <FormControl>
+                                            <Input
+                                              placeholder="Variant SKU"
+                                              {...field}
+                                            />
+                                          </FormControl>
+                                          <FormMessage />
+                                        </FormItem>
+                                      )}
+                                    />
+
+                                    <FormField
+                                      control={form.control}
+                                      name={`variants.${variantIndex}.price`}
+                                      render={({ field }) => (
+                                        <FormItem>
+                                          <FormLabel>Price *</FormLabel>
+                                          <FormControl>
+                                            <div className="relative">
+                                              <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                              <Input
+                                                type="number"
+                                                step="0.01"
+                                                min="0"
+                                                placeholder="0.00"
+                                                className="pl-10"
+                                                {...field}
+                                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                                              />
+                                            </div>
+                                          </FormControl>
+                                          <FormMessage />
+                                        </FormItem>
+                                      )}
+                                    />
+
+                                    <FormField
+                                      control={form.control}
+                                      name={`variants.${variantIndex}.stock_quantity`}
+                                      render={({ field }) => (
+                                        <FormItem>
+                                          <FormLabel>Stock Quantity *</FormLabel>
+                                          <FormControl>
+                                            <Input
+                                              type="number"
+                                              min="0"
+                                              placeholder="0"
+                                              {...field}
+                                              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                                            />
+                                          </FormControl>
+                                          <FormMessage />
+                                        </FormItem>
+                                      )}
+                                    />
+
+                                    <FormField
+                                      control={form.control}
+                                      name={`variants.${variantIndex}.weight`}
+                                      render={({ field }) => (
+                                        <FormItem>
+                                          <FormLabel>Weight (kg)</FormLabel>
+                                          <FormControl>
+                                            <div className="relative">
+                                              <Weight className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                              <Input
+                                                type="number"
+                                                step="0.01"
+                                                min="0"
+                                                placeholder="0.00"
+                                                className="pl-10"
+                                                {...field}
+                                                onChange={(e) => field.onChange(parseFloat(e.target.value) || undefined)}
+                                              />
+                                            </div>
+                                          </FormControl>
+                                          <FormMessage />
+                                        </FormItem>
+                                      )}
+                                    />
+                                  </div>
+
+                                  {/* Variant Combination */}
+                                  <div className="mt-3">
+                                    <Label className="text-sm font-medium">Variant Combination</Label>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
+                                      {(watch('variant_options') || []).map((option, optionIndex) => (
+                                        <FormField
+                                          key={optionIndex}
+                                          control={form.control}
+                                          name={`variants.${variantIndex}.combination.${option.name}`}
+                                          render={({ field }) => (
+                                            <FormItem>
+                                              <FormLabel>{option.name}</FormLabel>
+                                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <FormControl>
+                                                  <SelectTrigger>
+                                                    <SelectValue placeholder={`Select ${option.name}`} />
+                                                  </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                  {option.values.map((value, valueIndex) => (
+                                                    <SelectItem key={valueIndex} value={value}>
+                                                      {value}
+                                                    </SelectItem>
+                                                  ))}
+                                                </SelectContent>
+                                              </Select>
+                                              <FormMessage />
+                                            </FormItem>
+                                          )}
+                                        />
+                                      ))}
+                                    </div>
+                                  </div>
+
+                                  <div className="mt-3">
+                                    <FormField
+                                      control={form.control}
+                                      name={`variants.${variantIndex}.is_active`}
+                                      render={({ field }) => (
+                                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                                          <FormControl>
+                                            <Checkbox
+                                              checked={field.value}
+                                              onCheckedChange={field.onChange}
+                                            />
+                                          </FormControl>
+                                          <div className="space-y-1 leading-none">
+                                            <FormLabel>
+                                              Active Variant
+                                            </FormLabel>
+                                          </div>
+                                        </FormItem>
+                                      )}
+                                    />
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
               {/* Form Actions */}
               <div className="flex items-center justify-between pt-6 border-t">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -757,8 +1282,30 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                     </Button>
                   )}
                   <Button
-                    type="submit"
-                    disabled={isSubmitting || !isValid}
+                    type="button"
+                    disabled={isSubmitting}
+                    onClick={async () => {
+                      if (!isValid) {
+                        // Trigger validation and show errors
+                        const result = await form.trigger();
+                        if (!result) {
+                          const formErrors = form.formState.errors;
+                          const errorMessages = Object.entries(formErrors).map(([field, error]) => {
+                            return `${field}: ${error?.message || 'Invalid value'}`;
+                          }).join('\n');
+                          
+                          toast.error('Please fix the following validation errors:', {
+                            description: errorMessages,
+                            duration: 5000,
+                          });
+                          return;
+                        }
+                      }
+                      
+                      // If valid, submit the form
+                      const formData = getValues();
+                      await handleSubmit(formData);
+                    }}
                   >
                     {isSubmitting ? (
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />

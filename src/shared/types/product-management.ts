@@ -9,7 +9,13 @@ import type {
   UpdateProductRequest,
   ProductResponse,
   ProductListItem,
-  PaginationMeta
+  PaginationMeta,
+  CreateVariantOptionRequest,
+  VariantOptionResponse,
+  CreateVariantRequest,
+  ProductVariantResponse,
+  GenerateVariantsRequest,
+  GenerateVariantsResponse
 } from '../../generated/api/types.gen';
 
 // Re-export API types for convenience
@@ -18,8 +24,22 @@ export type {
   UpdateProductRequest,
   ProductResponse,
   ProductListItem,
-  PaginationMeta
+  PaginationMeta,
+  CreateVariantOptionRequest,
+  VariantOptionResponse,
+  CreateVariantRequest,
+  ProductVariantResponse,
+  GenerateVariantsRequest,
+  GenerateVariantsResponse
 };
+
+/**
+ * Extended ProductResponse that includes variant information when using include parameter
+ */
+export interface ProductWithVariants extends ProductResponse {
+  variants?: ProductVariantResponse[];
+  variant_options?: VariantOptionResponse[];
+}
 
 /**
  * Product form data for UI components
@@ -38,6 +58,35 @@ export interface ProductFormData {
     height?: number;
   };
   images?: string[];
+  is_active?: boolean;
+  // Variant-related fields
+  variant_options?: VariantOptionFormData[];
+  variants?: VariantFormData[];
+  enable_variants?: boolean;
+  auto_generate_variants?: boolean;
+}
+
+/**
+ * Variant option form data for UI
+ */
+export interface VariantOptionFormData {
+  id?: string;
+  name: string;
+  values: string[];
+}
+
+/**
+ * Variant form data for UI
+ */
+export interface VariantFormData {
+  id?: string;
+  option_combinations: Array<{
+    option_name: string;
+    option_value: string;
+  }>;
+  price_adjustment?: number;
+  stock_quantity?: number;
+  sku?: string;
   is_active?: boolean;
 }
 
@@ -59,6 +108,19 @@ export interface ProductFormErrors {
   };
   images?: string;
   general?: string;
+  // Variant-related errors
+  variant_options?: Array<{
+    name?: string;
+    values?: string;
+    general?: string;
+  }>;
+  variants?: Array<{
+    option_combinations?: string;
+    price_adjustment?: string;
+    stock_quantity?: string;
+    sku?: string;
+    general?: string;
+  }>;
 }
 
 /**

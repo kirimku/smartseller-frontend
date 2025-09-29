@@ -55,6 +55,8 @@ import {
 import { toast } from "sonner";
 import { productService } from "../../services/product";
 import type { ProductListItem } from "../../generated/api/types.gen";
+import { ProductForm } from "../../components/products/ProductForm";
+import type { ProductFormData, ProductWithVariants } from "../../shared/types/product-management";
 
 type ProductStatus = "draft" | "active" | "inactive" | "archived";
 type ProductCategory = "keyboard" | "mouse" | "headset" | "mousepad" | "chair" | "accessories";
@@ -89,19 +91,19 @@ const convertApiProductToDisplay = (apiProduct: ProductListItem): DisplayProduct
     name: apiProduct.name,
     sku: apiProduct.sku || `SKU-${apiProduct.id}`,
     category: "accessories" as ProductCategory, // Default category, should be mapped properly
-    price: apiProduct.base_price || 0,
+    price: apiProduct.price || 0,
     originalPrice: undefined,
     stock: apiProduct.stock_quantity || 0,
-    status: apiProduct.status as ProductStatus,
+    status: apiProduct.is_active ? "active" : "inactive",
     rating: 4.5, // Default rating, should come from API
     reviews: 0, // Default reviews, should come from API
     sales: 0, // Default sales, should come from API
     revenue: 0, // Default revenue, should come from API
-    description: apiProduct.description || "",
-    images: apiProduct.images || [],
+    description: "", // Description not available in ProductListItem
+    images: apiProduct.thumbnail ? [apiProduct.thumbnail] : [],
     tags: [], // Default tags, should come from API
-    createdAt: apiProduct.created_at || new Date().toISOString(),
-    updatedAt: apiProduct.updated_at || new Date().toISOString(),
+    createdAt: new Date().toISOString(), // Created date not available in ProductListItem
+    updatedAt: new Date().toISOString(), // Updated date not available in ProductListItem
     featured: false, // Default featured, should come from API
     flashDeal: false, // Default flash deal, should come from API
   };
@@ -115,59 +117,61 @@ export default function AdminProducts() {
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedProduct, setSelectedProduct] = useState<DisplayProduct | null>(null);
+  const [detailedProduct, setDetailedProduct] = useState<ProductWithVariants | null>(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
 
   // Load products from API
-  useEffect(() => {
-    const loadProducts = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        console.log('🔄 Loading products from API...');
-        document.title = 'Loading Products... - SmartSeller';
-        
-        const result = await productService.getProducts({
-          page: 1,
-          page_size: 100, // Load more products for demo
-          sort_by: 'created_at',
-          sort_desc: true,
-        });
-        
-        console.log('✅ Products loaded successfully:', result);
-        document.title = `${result.products.length} Products - SmartSeller`;
-        
-        const displayProducts = result.products.map(convertApiProductToDisplay);
-        setProducts(displayProducts);
-        
-        toast.success(`Loaded ${displayProducts.length} products successfully`);
-      } catch (err) {
-        console.error('❌ Error loading products:', err);
-        document.title = 'Error Loading Products - SmartSeller';
-        
-        let errorMessage = 'Failed to load products';
-        
-        // Check if it's a network error (backend not available)
-        if (err instanceof Error) {
-          if (err.message.includes('Network Error') || 
-              err.message.includes('ECONNREFUSED') || 
-              err.message.includes('fetch')) {
-            errorMessage = 'Backend server is not available. Please ensure the API server is running on http://localhost:8090';
-          } else {
-            errorMessage = err.message;
-          }
+  const loadProducts = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      console.log('🔄 Loading products from API...');
+      document.title = 'Loading Products... - SmartSeller';
+      
+      const result = await productService.getProducts({
+        page: 1,
+        page_size: 100, // Load more products for demo
+        sort_by: 'created_at',
+        sort_desc: true,
+      });
+      
+      console.log('✅ Products loaded successfully:', result);
+      document.title = `${result.products.length} Products - SmartSeller`;
+      
+      const displayProducts = result.products.map(convertApiProductToDisplay);
+      setProducts(displayProducts);
+      
+      toast.success(`Loaded ${displayProducts.length} products successfully`);
+    } catch (err) {
+      console.error('❌ Error loading products:', err);
+      document.title = 'Error Loading Products - SmartSeller';
+      
+      let errorMessage = 'Failed to load products';
+      
+      // Check if it's a network error (backend not available)
+      if (err instanceof Error) {
+        if (err.message.includes('Network Error') || 
+            err.message.includes('ECONNREFUSED') || 
+            err.message.includes('fetch')) {
+          errorMessage = 'Backend server is not available. Please ensure the API server is running on http://localhost:8090';
+        } else {
+          errorMessage = err.message;
         }
-        
-        setError(errorMessage);
-        toast.error(`Failed to load products: ${errorMessage}`);
-      } finally {
-        setLoading(false);
       }
-    };
+      
+      setError(errorMessage);
+      toast.error(`Failed to load products: ${errorMessage}`);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     loadProducts();
   }, []);
 
@@ -233,9 +237,25 @@ export default function AdminProducts() {
     });
   };
 
-  const handleViewProduct = (product: DisplayProduct) => {
+  const handleViewProduct = async (product: DisplayProduct) => {
     setSelectedProduct(product);
+    setDetailedProduct(null);
     setIsViewDialogOpen(true);
+    
+    try {
+      setLoadingDetails(true);
+      console.log('🔄 Loading product details with variants for:', product.id);
+      
+      const productWithVariants = await productService.getProductWithDetails(product.id, ['variants']);
+      setDetailedProduct(productWithVariants);
+      
+      console.log('✅ Product details loaded successfully:', productWithVariants);
+    } catch (error) {
+      console.error('❌ Error loading product details:', error);
+      toast.error('Failed to load product details');
+    } finally {
+      setLoadingDetails(false);
+    }
   };
 
   const handleEditProduct = (product: DisplayProduct) => {
@@ -256,6 +276,24 @@ export default function AdminProducts() {
       }
     }
   };
+
+  // Helper function to map DisplayProduct to ProductFormData
+  const mapProductToFormData = (product: DisplayProduct): ProductFormData => ({
+    name: product.name,
+    description: product.description,
+    base_price: product.price,
+    category_id: '', // Will need to map category properly
+    sku: product.sku,
+    stock_quantity: product.stock,
+    weight: 0, // Default weight, not available in DisplayProduct
+    dimensions: { length: 0, width: 0, height: 0 }, // Default dimensions
+    images: product.images,
+    status: product.status,
+    enable_variants: false,
+    auto_generate_variants: false,
+    variant_options: [],
+    variants: []
+  });
 
   const productStats = {
     total: products.length,
@@ -342,54 +380,25 @@ export default function AdminProducts() {
                 Add Product
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Add New Product</DialogTitle>
               </DialogHeader>
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="productName">Product Name</Label>
-                    <Input id="productName" placeholder="Enter product name" />
-                  </div>
-                  <div>
-                    <Label htmlFor="sku">SKU</Label>
-                    <Input id="sku" placeholder="Enter SKU" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="category">Category</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="keyboard">Keyboard</SelectItem>
-                        <SelectItem value="mouse">Mouse</SelectItem>
-                        <SelectItem value="headset">Headset</SelectItem>
-                        <SelectItem value="mousepad">Mousepad</SelectItem>
-                        <SelectItem value="chair">Chair</SelectItem>
-                        <SelectItem value="accessories">Accessories</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="price">Price (IDR)</Label>
-                    <Input id="price" type="number" placeholder="Enter price" />
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea id="description" placeholder="Enter product description" />
-                </div>
-                <div className="flex justify-end gap-3">
-                  <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button>Add Product</Button>
-                </div>
-              </div>
+              <ProductForm
+                mode="create"
+                onSubmit={async (formData) => {
+                  try {
+                    await productService.createProduct(formData);
+                    toast.success("Product created successfully!");
+                    setIsAddDialogOpen(false);
+                    loadProducts(); // Refresh the product list
+                  } catch (error) {
+                    console.error("Error creating product:", error);
+                    toast.error("Failed to create product. Please try again.");
+                  }
+                }}
+                onCancel={() => setIsAddDialogOpen(false)}
+              />
             </DialogContent>
           </Dialog>
         </div>
@@ -756,10 +765,94 @@ export default function AdminProducts() {
                   </div>
                 </div>
               </div>
+              
+              {/* Variants Section */}
+              <div className="mt-6 border-t pt-6">
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <Layers className="h-5 w-5" />
+                  Product Variants
+                </h3>
+                
+                {loadingDetails ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                    <span className="text-gray-600">Loading variant details...</span>
+                  </div>
+                ) : detailedProduct?.variants && detailedProduct.variants.length > 0 ? (
+                  <div className="space-y-4">
+                    {detailedProduct.variants.map((variant, index) => (
+                      <div key={variant.id || index} className="border rounded-lg p-4 bg-gray-50">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          <div>
+                            <Label className="text-gray-600 text-sm">SKU</Label>
+                            <p className="font-medium">{variant.sku || 'N/A'}</p>
+                          </div>
+                          <div>
+                            <Label className="text-gray-600 text-sm">Price</Label>
+                            <p className="font-medium">{variant.price ? formatCurrency(variant.price) : 'N/A'}</p>
+                          </div>
+                          <div>
+                            <Label className="text-gray-600 text-sm">Stock</Label>
+                            <p className="font-medium">{variant.stock_quantity || 0}</p>
+                          </div>
+                          <div>
+                            <Label className="text-gray-600 text-sm">Weight</Label>
+                            <p className="font-medium">{variant.weight ? `${variant.weight}g` : 'N/A'}</p>
+                          </div>
+                        </div>
+                        
+                        {variant.option_values && variant.option_values.length > 0 && (
+                          <div className="mt-3 pt-3 border-t border-gray-200">
+                            <Label className="text-gray-600 text-sm">Options</Label>
+                            <div className="flex gap-2 flex-wrap mt-1">
+                              {variant.option_values.map((option, optIndex) => (
+                                <Badge key={optIndex} variant="outline" className="text-xs">
+                                  {option}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <Layers className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                    <p>No variants available for this product</p>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Edit Product Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Product</DialogTitle>
+          </DialogHeader>
+          {selectedProduct && (
+            <ProductForm
+              mode="edit"
+              onSubmit={async (formData) => {
+                try {
+                  await productService.updateProduct(selectedProduct.id, formData);
+                  toast.success("Product updated successfully!");
+                  setIsEditDialogOpen(false);
+                  loadProducts(); // Refresh the product list
+                } catch (error) {
+                  console.error("Error updating product:", error);
+                  toast.error("Failed to update product. Please try again.");
+                }
+              }}
+              onCancel={() => setIsEditDialogOpen(false)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
-  );
-}
+    );
+  }

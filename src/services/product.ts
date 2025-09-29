@@ -13,17 +13,26 @@ import {
   postApiV1Products as apiPostProducts, 
   getApiV1ProductsById as apiGetProductsById, 
   putApiV1ProductsById as apiPutProductsById, 
-  deleteApiV1ProductsById as apiDeleteProductsById 
+  deleteApiV1ProductsById as apiDeleteProductsById,
+  postApiV1ProductsByProductIdVariantOptions as apiPostVariantOptions,
+  postApiV1ProductsByProductIdVariants as apiPostVariants,
+  postApiV1ProductsByProductIdVariantsGenerate as apiPostVariantsGenerate
 } from '../generated/api/sdk.gen';
 import type { 
-  CreateProductRequest,
-  UpdateProductRequest,
-  ProductResponse,
+  CreateProductRequest, 
+  UpdateProductRequest, 
+  ProductResponse, 
   ProductListItem,
-  ProductListResponse,
+  PaginationMeta,
   GetApiV1ProductsData,
-  ErrorResponse
+  CreateVariantOptionRequest,
+  VariantOptionResponse,
+  CreateVariantRequest,
+  ProductVariantResponse,
+  GenerateVariantsRequest,
+  GenerateVariantsResponse
 } from '../generated/api/types.gen';
+import type { ProductWithVariants } from '../shared/types/product-management';
 import { getSecureClient } from '../lib/secure-api-integration';
 import { getErrorMessage, isApiError } from '../lib/security/enhanced-api-client';
 
@@ -218,6 +227,58 @@ export class ProductService {
   }
 
   /**
+   * Get a single product by ID with detailed information including variants
+   */
+  static async getProductWithDetails(id: string, include: string[] = ['variants', 'category', 'images'], forceRefresh = false): Promise<ProductWithVariants> {
+    const cacheKey = `${id}_${include.join(',')}`;
+    const cached = this.cache.get(cacheKey);
+    
+    if (!forceRefresh && cached && cached.expiry > new Date()) {
+      return cached.data;
+    }
+
+    try {
+      const response = await apiGetProductsById({
+        client: getSecureClient(),
+        path: { id },
+        query: {
+          include: include.join(',')
+        }
+      });
+
+      if (!response.data?.success || !response.data?.data) {
+        throw new ProductServiceError(
+          response.data?.message || 'Product not found',
+          'NOT_FOUND',
+          response.status
+        );
+      }
+
+      const product = response.data.data;
+
+      // Cache the product with details
+      this.cache.set(cacheKey, {
+        data: product,
+        expiry: new Date(Date.now() + this.CACHE_DURATION),
+      });
+
+      return product;
+    } catch (error) {
+      if (isApiError(error)) {
+        throw new ProductServiceError(
+          error.message || 'Failed to fetch product details',
+          'API_ERROR',
+          error.meta?.http_status
+        );
+      }
+      throw new ProductServiceError(
+        getErrorMessage(error),
+        'UNKNOWN_ERROR'
+      );
+    }
+  }
+
+  /**
    * Create a new product
    */
   static async createProduct(productData: CreateProductRequest): Promise<ProductResponse> {
@@ -335,6 +396,123 @@ export class ProductService {
       if (isApiError(error)) {
         throw new ProductServiceError(
           error.message || 'Failed to delete product',
+          'API_ERROR',
+          error.meta?.http_status
+        );
+      }
+      throw new ProductServiceError(
+        getErrorMessage(error),
+        'UNKNOWN_ERROR'
+      );
+    }
+  }
+
+  /**
+   * Create variant options for a product
+   */
+  static async createVariantOptions(productId: string, optionData: CreateVariantOptionRequest): Promise<VariantOptionResponse> {
+    try {
+      const response = await apiPostVariantOptions({
+        client: getSecureClient(),
+        path: { product_id: productId },
+        body: optionData,
+      });
+
+      if (!response.data?.success || !response.data?.data) {
+        throw new ProductServiceError(
+          response.data?.message || 'Failed to create variant options',
+          'CREATE_FAILED',
+          response.status
+        );
+      }
+
+      // Clear cache to ensure fresh data
+      this.clearCache();
+      this.clearListCache();
+
+      return response.data.data;
+    } catch (error) {
+      if (isApiError(error)) {
+        throw new ProductServiceError(
+          error.message || 'Failed to create variant options',
+          'API_ERROR',
+          error.meta?.http_status
+        );
+      }
+      throw new ProductServiceError(
+        getErrorMessage(error),
+        'UNKNOWN_ERROR'
+      );
+    }
+  }
+
+  /**
+   * Create a specific product variant
+   */
+  static async createVariant(productId: string, variantData: CreateVariantRequest): Promise<ProductVariantResponse> {
+    try {
+      const response = await apiPostVariants({
+        client: getSecureClient(),
+        path: { product_id: productId },
+        body: variantData,
+      });
+
+      if (!response.data?.success || !response.data?.data) {
+        throw new ProductServiceError(
+          response.data?.message || 'Failed to create variant',
+          'CREATE_FAILED',
+          response.status
+        );
+      }
+
+      // Clear cache to ensure fresh data
+      this.clearCache();
+      this.clearListCache();
+
+      return response.data.data;
+    } catch (error) {
+      if (isApiError(error)) {
+        throw new ProductServiceError(
+          error.message || 'Failed to create variant',
+          'API_ERROR',
+          error.meta?.http_status
+        );
+      }
+      throw new ProductServiceError(
+        getErrorMessage(error),
+        'UNKNOWN_ERROR'
+      );
+    }
+  }
+
+  /**
+   * Auto-generate multiple product variants
+   */
+  static async generateVariants(productId: string, generateData: GenerateVariantsRequest): Promise<GenerateVariantsResponse> {
+    try {
+      const response = await apiPostVariantsGenerate({
+        client: getSecureClient(),
+        path: { product_id: productId },
+        body: generateData,
+      });
+
+      if (!response.data?.success || !response.data?.data) {
+        throw new ProductServiceError(
+          response.data?.message || 'Failed to generate variants',
+          'GENERATE_FAILED',
+          response.status
+        );
+      }
+
+      // Clear cache to ensure fresh data
+      this.clearCache();
+      this.clearListCache();
+
+      return response.data.data;
+    } catch (error) {
+      if (isApiError(error)) {
+        throw new ProductServiceError(
+          error.message || 'Failed to generate variants',
           'API_ERROR',
           error.meta?.http_status
         );
@@ -478,9 +656,13 @@ export const productService = ProductService;
 export const {
   getProducts,
   getProductById,
+  getProductWithDetails,
   createProduct,
   updateProduct,
   deleteProduct,
+  createVariantOptions,
+  createVariant,
+  generateVariants,
   clearCache,
   clearListCache,
   getCachedProduct,
