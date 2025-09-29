@@ -87,7 +87,7 @@ export const BarcodeList: React.FC<BarcodeListProps> = ({ onViewDetails }) => {
 
       const response = await enhancedApiClient.getClient().get({
         url: '/api/v1/admin/warranty/barcodes',
-        params
+        query: params
       });
 
       const apiResponse = response.data as ApiResponse<BarcodeListResponse>;
@@ -131,7 +131,7 @@ export const BarcodeList: React.FC<BarcodeListProps> = ({ onViewDetails }) => {
 
       const response = await enhancedApiClient.getClient().get({
         url: '/api/v1/admin/warranty/barcodes/export',
-        params,
+        query: params,
         responseType: 'blob'
       });
 
