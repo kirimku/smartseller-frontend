@@ -223,31 +223,42 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     try {
       setIsSubmitting(true);
 
-      // Convert form values to ProductFormData format
-      const formData: ProductFormData = {
-        name: data.name,
-        description: data.description,
-        price: data.price,
-        category_id: data.category_id,
-        sku: data.sku,
-        stock_quantity: data.stock_quantity,
-        weight: data.weight,
-        dimensions: data.dimensions,
-        images: data.images,
-        is_active: data.is_active,
-        enable_variants: data.enable_variants,
-        auto_generate_variants: data.auto_generate_variants,
-        variant_options: data.variant_options,
-        variants: data.variants,
-      };
-
       if (onSubmit) {
+        // Convert form values to ProductFormData format for custom onSubmit handler
+        const formData: ProductFormData = {
+          name: data.name,
+          description: data.description,
+          price: data.price,
+          category_id: data.category_id,
+          sku: data.sku,
+          stock_quantity: data.stock_quantity,
+          weight: data.weight,
+          dimensions: data.dimensions,
+          images: data.images,
+          is_active: data.is_active,
+          enable_variants: data.enable_variants,
+          auto_generate_variants: data.auto_generate_variants,
+          variant_options: data.variant_options,
+          variants: data.variants,
+        };
         await onSubmit(formData);
       } else {
         let result: ProductResponse;
         
         if (mode === 'create') {
-          result = await productService.createProduct(formData as CreateProductRequest);
+          // Create base product payload (excluding variant fields)
+          const createProductData: CreateProductRequest = {
+            name: data.name,
+            description: data.description,
+            price: data.price, // API expects 'price' not 'base_price'
+            category_id: data.category_id,
+            sku: data.sku,
+            stock_quantity: data.stock_quantity,
+            weight: data.weight,
+            // Note: dimensions, images, and variant fields are not part of CreateProductRequest
+          };
+          
+          result = await productService.createProduct(createProductData);
           toast.success('Product created successfully');
         } else if (product?.id) {
           result = await productService.updateProduct(product.id, formData as UpdateProductRequest);
@@ -264,8 +275,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
               for (const option of data.variant_options) {
                 if (option.name && option.values && option.values.length > 0) {
                   await productService.createVariantOptions(result.id, {
-                    name: option.name,
-                    values: option.values.filter(value => value.trim() !== ''),
+                    option_name: option.name,
+                    option_values: option.values.filter(value => value.trim() !== ''),
                   });
                 }
               }
@@ -277,8 +288,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
               // Auto-generate variants
               const generateRequest = {
                 base_price: data.price,
-                base_stock: data.stock_quantity,
-                base_weight: data.weight,
+                stock_quantity: data.stock_quantity,
+                weight: data.weight,
               };
               
               await productService.generateVariants(result.id, generateRequest);
@@ -288,9 +299,9 @@ export const ProductForm: React.FC<ProductFormProps> = ({
               for (const variant of data.variants) {
                 if (variant.sku && variant.price !== undefined && variant.stock_quantity !== undefined) {
                   await productService.createVariant(result.id, {
-                    combination: variant.combination || {},
+                    variant_options: variant.combination || {},
                     sku: variant.sku,
-                    price: variant.price,
+                    base_price: variant.price,
                     stock_quantity: variant.stock_quantity,
                     weight: variant.weight,
                     is_active: variant.is_active ?? true,

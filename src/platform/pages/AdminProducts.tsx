@@ -386,16 +386,14 @@ export default function AdminProducts() {
               </DialogHeader>
               <ProductForm
                 mode="create"
-                onSubmit={async (formData) => {
-                  try {
-                    await productService.createProduct(formData);
-                    toast.success("Product created successfully!");
-                    setIsAddDialogOpen(false);
-                    loadProducts(); // Refresh the product list
-                  } catch (error) {
-                    console.error("Error creating product:", error);
-                    toast.error("Failed to create product. Please try again.");
-                  }
+                onSuccess={(product) => {
+                  toast.success("Product created successfully!");
+                  setIsAddDialogOpen(false);
+                  loadProducts(); // Refresh the product list
+                }}
+                onError={(error) => {
+                  console.error("Error creating product:", error);
+                  toast.error("Failed to create product. Please try again.");
                 }}
                 onCancel={() => setIsAddDialogOpen(false)}
               />

@@ -75,6 +75,12 @@ import {
   BarChart3
 } from "lucide-react";
 
+// Import actual barcode components
+import { BarcodeGenerator } from "../../components/barcode/BarcodeGenerator";
+import { BarcodeList } from "../../components/barcode/BarcodeList";
+import { BarcodeValidator } from "../../components/barcode/BarcodeValidator";
+import { BarcodeStatsDashboard } from "../../components/barcode/BarcodeStatsDashboard";
+
 type WarrantyStatus = "active" | "expired" | "claimed" | "processing" | "repaired" | "replaced" | "denied";
 type ClaimStatus = "pending" | "validated" | "in_repair" | "repaired" | "shipped" | "completed" | "rejected";
 
@@ -119,110 +125,71 @@ type WarrantyClaim = {
   status: ClaimStatus;
   validatedBy?: string;
   validatedAt?: string;
-  repairNotes?: string;
-  estimatedRepairTime?: number; // days
-  actualRepairTime?: number; // days
-  repairCost?: number;
-  replacementProductId?: string;
-  shippingTrackingNumber?: string;
-  completedAt?: string;
   rejectionReason?: string;
-  photos: string[];
-  attachments: string[];
+  repairNotes?: string;
+  estimatedRepairTime?: number;
+  shippingTrackingNumber?: string;
+  photos?: string[];
+  attachments?: string[];
 };
 
-type RepairTicket = {
-  id: string;
-  claimId: string;
-  technicianId: string;
-  technicianName: string;
-  startDate: string;
-  endDate?: string;
-  status: "assigned" | "in_progress" | "completed" | "on_hold";
-  repairSteps: RepairStep[];
-  partsCost: number;
-  laborCost: number;
-  notes: string;
-};
-
-type RepairStep = {
-  id: string;
-  description: string;
-  status: "pending" | "completed";
-  completedAt?: string;
-  notes?: string;
-};
-
-// Mock data
+// Mock data for demonstration
 const mockProducts: Product[] = [
-  { id: "prod1", name: "Rexus Gaming Mouse RX-110", sku: "RX-110", category: "Mouse", warrantyPeriod: 12, price: 150000 },
-  { id: "prod2", name: "Rexus Gaming Keyboard KX-200", sku: "KX-200", category: "Keyboard", warrantyPeriod: 24, price: 800000 },
-  { id: "prod3", name: "Rexus Gaming Headset HX-300", sku: "HX-300", category: "Headset", warrantyPeriod: 18, price: 500000 },
-  { id: "prod4", name: "Rexus Gaming Mousepad MP-400", sku: "MP-400", category: "Mousepad", warrantyPeriod: 6, price: 75000 },
+  { id: "prod1", name: "Rexus Gaming Mouse RX-110", sku: "RX110", category: "Gaming Peripherals", warrantyPeriod: 12, price: 250000 },
+  { id: "prod2", name: "Rexus Gaming Keyboard KX-200", sku: "KX200", category: "Gaming Peripherals", warrantyPeriod: 24, price: 450000 },
+  { id: "prod3", name: "Rexus Gaming Headset HX-300", sku: "HX300", category: "Gaming Peripherals", warrantyPeriod: 18, price: 350000 },
 ];
 
-const mockBarcodes: WarrantyBarcode[] = [
+const mockWarrantyBarcodes: WarrantyBarcode[] = [
   {
     id: "bc001",
     productId: "prod1",
-    barcodeNumber: "REX2024080100001",
-    qrCodeData: "https://warranty.rexus.com/claim/REX2024080100001",
-    purchaseDate: "2024-07-15",
-    customerId: "cust001",
+    barcodeNumber: "WB240801001",
+    qrCodeData: "https://warranty.rexus.id/claim/WB240801001",
     status: "active",
-    expiryDate: "2025-07-15",
-    isUsed: true,
-    generatedAt: "2024-07-10",
-    activatedAt: "2024-07-15"
+    isUsed: false,
+    generatedAt: "2024-08-01T10:00:00Z",
+    expiryDate: "2025-08-01"
   },
   {
     id: "bc002",
     productId: "prod2",
-    barcodeNumber: "REX2024080100002",
-    qrCodeData: "https://warranty.rexus.com/claim/REX2024080100002",
+    barcodeNumber: "WB240801002",
+    qrCodeData: "https://warranty.rexus.id/claim/WB240801002",
     status: "active",
-    isUsed: false,
-    generatedAt: "2024-08-01"
-  },
-  {
-    id: "bc003",
-    productId: "prod1",
-    barcodeNumber: "REX2024080100003",
-    qrCodeData: "https://warranty.rexus.com/claim/REX2024080100003",
-    purchaseDate: "2024-06-20",
-    customerId: "cust002",
-    status: "claimed",
-    expiryDate: "2025-06-20",
     isUsed: true,
-    generatedAt: "2024-06-15",
-    activatedAt: "2024-06-20"
+    generatedAt: "2024-08-01T10:30:00Z",
+    purchaseDate: "2024-08-05",
+    customerId: "cust001",
+    activatedAt: "2024-08-05T14:20:00Z",
+    expiryDate: "2026-08-05"
   }
 ];
 
-const mockClaims: WarrantyClaim[] = [
+const mockWarrantyClaims: WarrantyClaim[] = [
   {
     id: "claim001",
-    barcodeId: "bc003",
+    barcodeId: "bc002",
     claimNumber: "WC-2024-08-001",
-    customerId: "cust002",
-    customerName: "Jane Smith",
-    customerEmail: "jane.smith@example.com",
+    customerId: "cust001",
+    customerName: "Ahmad Rizki",
+    customerEmail: "ahmad.rizki@example.com",
     customerPhone: "+62812345678",
-    productId: "prod1",
-    productName: "Rexus Gaming Mouse RX-110",
-    issueDescription: "Mouse left click not working properly, sometimes double clicks",
+    productId: "prod2",
+    productName: "Rexus Gaming Keyboard KX-200",
+    issueDescription: "Some keys are not responding properly",
     issueCategory: "Hardware Malfunction",
-    purchaseDate: "2024-06-20",
+    purchaseDate: "2024-08-05",
     claimDate: "2024-08-10",
     status: "pending",
-    photos: ["photo1.jpg", "photo2.jpg"],
-    attachments: ["receipt.pdf"]
+    photos: ["keyboard_issue.jpg"],
+    attachments: ["purchase_receipt.pdf"]
   },
   {
     id: "claim002",
-    barcodeId: "bc001",
+    barcodeId: "bc003",
     claimNumber: "WC-2024-08-002",
-    customerId: "cust001",
+    customerId: "cust002",
     customerName: "John Doe",
     customerEmail: "john.doe@example.com",
     customerPhone: "+62823456789",
@@ -239,44 +206,24 @@ const mockClaims: WarrantyClaim[] = [
     estimatedRepairTime: 3,
     photos: ["sensor_issue.jpg"],
     attachments: ["purchase_receipt.pdf"]
-  },
-  {
-    id: "claim003",
-    barcodeId: "bc004",
-    claimNumber: "WC-2024-08-003",
-    customerId: "cust003",
-    customerName: "Mike Johnson",
-    customerEmail: "mike.johnson@example.com",
-    customerPhone: "+62834567890",
-    productId: "prod2",
-    productName: "Rexus Gaming Keyboard KX-200",
-    issueDescription: "Several keys stopped working after liquid spill",
-    issueCategory: "Physical Damage",
-    purchaseDate: "2024-05-10",
-    claimDate: "2024-08-08",
-    status: "rejected",
-    validatedBy: "admin002",
-    validatedAt: "2024-08-08",
-    rejectionReason: "Physical damage due to liquid spill is not covered under warranty",
-    photos: ["liquid_damage.jpg"],
-    attachments: []
   }
 ];
 
 export default function WarrantyProgram() {
   const [activeTab, setActiveTab] = useState("overview");
-  const [products, setProducts] = useState<Product[]>(mockProducts);
-  const [barcodes, setBarcodes] = useState<WarrantyBarcode[]>(mockBarcodes);
-  const [claims, setClaims] = useState<WarrantyClaim[]>(mockClaims);
-  const [selectedProduct, setSelectedProduct] = useState<string>("");
-  const [bulkQuantity, setBulkQuantity] = useState<number>(1);
-  const [isGeneratingBarcodes, setIsGeneratingBarcodes] = useState(false);
-  const [selectedClaim, setSelectedClaim] = useState<WarrantyClaim | null>(null);
-  const [isClaimDialogOpen, setIsClaimDialogOpen] = useState(false);
+  const [products] = useState<Product[]>(mockProducts);
+  const [warrantyBarcodes] = useState<WarrantyBarcode[]>(mockWarrantyBarcodes);
+  const [warrantyClaims, setWarrantyClaims] = useState<WarrantyClaim[]>(mockWarrantyClaims);
+  
+  // Search and filter states
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  
+  // Dialog states
+  const [isClaimDialogOpen, setIsClaimDialogOpen] = useState(false);
+  const [selectedClaim, setSelectedClaim] = useState<WarrantyClaim | null>(null);
   const [isShippingDialogOpen, setIsShippingDialogOpen] = useState(false);
-
+  
   // Form states
   const [shippingForm, setShippingForm] = useState({
     trackingNumber: "",
@@ -285,414 +232,213 @@ export default function WarrantyProgram() {
     notes: ""
   });
 
-  const generateBarcodes = async () => {
-    if (!selectedProduct || bulkQuantity < 1) return;
-
-    setIsGeneratingBarcodes(true);
+  // Helper functions
+  const getStatusBadge = (status: ClaimStatus) => {
+    const statusConfig = {
+      pending: { label: "Pending", variant: "secondary" as const },
+      validated: { label: "Validated", variant: "default" as const },
+      in_repair: { label: "In Repair", variant: "default" as const },
+      repaired: { label: "Repaired", variant: "default" as const },
+      shipped: { label: "Shipped", variant: "default" as const },
+      completed: { label: "Completed", variant: "default" as const },
+      rejected: { label: "Rejected", variant: "destructive" as const }
+    };
     
-    // Simulate barcode generation
-    setTimeout(() => {
-      const newBarcodes: WarrantyBarcode[] = [];
-      for (let i = 0; i < bulkQuantity; i++) {
-        const barcodeNumber = `REX${new Date().toISOString().slice(0, 10).replace(/-/g, '')}${String(barcodes.length + i + 1).padStart(5, '0')}`;
-        const newBarcode: WarrantyBarcode = {
-          id: `bc${Date.now()}_${i}`,
-          productId: selectedProduct,
-          barcodeNumber,
-          qrCodeData: `https://warranty.rexus.com/claim/${barcodeNumber}`,
-          status: "active",
-          isUsed: false,
-          generatedAt: new Date().toISOString().slice(0, 10)
-        };
-        newBarcodes.push(newBarcode);
-      }
-      
-      setBarcodes(prev => [...prev, ...newBarcodes]);
-      setIsGeneratingBarcodes(false);
-      setBulkQuantity(1);
-      setSelectedProduct("");
-    }, 2000);
+    const config = statusConfig[status];
+    return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
-  const validateClaim = (claimId: string, isValid: boolean, notes?: string) => {
-    setClaims(prev => prev.map(claim => 
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('id-ID');
+  };
+
+  const validateClaim = (claimId: string, isValid: boolean, rejectionReason?: string) => {
+    setWarrantyClaims(prev => prev.map(claim => 
       claim.id === claimId 
         ? { 
             ...claim, 
             status: isValid ? "validated" : "rejected",
             validatedBy: "admin001",
-            validatedAt: new Date().toISOString().slice(0, 10),
-            rejectionReason: !isValid ? notes : undefined
+            validatedAt: new Date().toISOString(),
+            rejectionReason: rejectionReason
           }
         : claim
     ));
+    setIsClaimDialogOpen(false);
   };
 
-  const updateClaimStatus = (claimId: string, newStatus: ClaimStatus, notes?: string) => {
-    setClaims(prev => prev.map(claim => 
-      claim.id === claimId 
-        ? { 
-            ...claim, 
-            status: newStatus,
-            repairNotes: notes || claim.repairNotes,
-            ...(newStatus === "completed" && { completedAt: new Date().toISOString().slice(0, 10) })
-          }
-        : claim
+  const updateClaimStatus = (claimId: string, newStatus: ClaimStatus) => {
+    setWarrantyClaims(prev => prev.map(claim => 
+      claim.id === claimId ? { ...claim, status: newStatus } : claim
     ));
+    setIsClaimDialogOpen(false);
   };
 
   const shipProduct = () => {
-    if (!selectedClaim) return;
-
-    setClaims(prev => prev.map(claim => 
-      claim.id === selectedClaim.id 
-        ? { 
-            ...claim, 
-            status: "shipped",
-            shippingTrackingNumber: shippingForm.trackingNumber
-          }
-        : claim
-    ));
-
-    setIsShippingDialogOpen(false);
-    setShippingForm({
-      trackingNumber: "",
-      shippingProvider: "",
-      estimatedDelivery: "",
-      notes: ""
-    });
+    if (selectedClaim && shippingForm.trackingNumber && shippingForm.shippingProvider) {
+      setWarrantyClaims(prev => prev.map(claim => 
+        claim.id === selectedClaim.id 
+          ? { 
+              ...claim, 
+              status: "shipped",
+              shippingTrackingNumber: shippingForm.trackingNumber
+            }
+          : claim
+      ));
+      setIsShippingDialogOpen(false);
+      setIsClaimDialogOpen(false);
+      setShippingForm({ trackingNumber: "", shippingProvider: "", estimatedDelivery: "", notes: "" });
+    }
   };
 
-  const getStatusBadge = (status: ClaimStatus) => {
-    const variants = {
-      pending: "bg-yellow-100 text-yellow-800",
-      validated: "bg-blue-100 text-blue-800",
-      in_repair: "bg-purple-100 text-purple-800",
-      repaired: "bg-green-100 text-green-800",
-      shipped: "bg-blue-100 text-blue-800",
-      completed: "bg-green-100 text-green-800",
-      rejected: "bg-red-100 text-red-800"
-    };
-    
-    const icons = {
-      pending: <Clock className="h-3 w-3 mr-1" />,
-      validated: <CheckCircle className="h-3 w-3 mr-1" />,
-      in_repair: <Wrench className="h-3 w-3 mr-1" />,
-      repaired: <CheckSquare className="h-3 w-3 mr-1" />,
-      shipped: <Truck className="h-3 w-3 mr-1" />,
-      completed: <CheckCircle className="h-3 w-3 mr-1" />,
-      rejected: <XCircle className="h-3 w-3 mr-1" />
-    };
-    
-    return (
-      <Badge className={variants[status]}>
-        {icons[status]}
-        {status.replace('_', ' ').charAt(0).toUpperCase() + status.replace('_', ' ').slice(1)}
-      </Badge>
-    );
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('id-ID', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  const filteredClaims = claims.filter(claim => {
+  // Filter claims based on search and status
+  const filteredClaims = warrantyClaims.filter(claim => {
     const matchesSearch = claim.claimNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          claim.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          claim.productName.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || claim.status === statusFilter;
-    
     return matchesSearch && matchesStatus;
   });
 
-  const stats = {
-    totalBarcodes: barcodes.length,
-    activeBarcodes: barcodes.filter(b => b.status === "active" && !b.isUsed).length,
-    totalClaims: claims.length,
-    pendingClaims: claims.filter(c => c.status === "pending").length,
-    inRepairClaims: claims.filter(c => c.status === "in_repair").length,
-    completedClaims: claims.filter(c => c.status === "completed").length
-  };
+  // Calculate statistics
+  const totalBarcodes = warrantyBarcodes.length;
+  const activeBarcodes = warrantyBarcodes.filter(b => b.status === "active").length;
+  const usedBarcodes = warrantyBarcodes.filter(b => b.isUsed).length;
+  const totalClaims = warrantyClaims.length;
+  const pendingClaims = warrantyClaims.filter(c => c.status === "pending").length;
+  const completedClaims = warrantyClaims.filter(c => c.status === "completed").length;
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Warranty Program</h1>
-          <p className="text-gray-600 mt-2">Manage product warranties and claims</p>
+          <h1 className="text-3xl font-bold">Warranty Program Management</h1>
+          <p className="text-gray-600 mt-1">Manage warranty barcodes, claims, and customer support</p>
         </div>
         <div className="flex gap-3">
           <Button variant="outline" className="flex items-center gap-2">
             <Download className="h-4 w-4" />
-            Export Report
+            Export Data
           </Button>
-          <Button variant="outline" className="flex items-center gap-2">
-            <PrinterIcon className="h-4 w-4" />
-            Print Barcodes
+          <Button className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            New Warranty Batch
           </Button>
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
+      {/* Main Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="barcodes">Barcode Generator</TabsTrigger>
-          <TabsTrigger value="claims">Warranty Claims</TabsTrigger>
-          <TabsTrigger value="reports">Reports</TabsTrigger>
+          <TabsTrigger value="generate">Generate</TabsTrigger>
+          <TabsTrigger value="list">Barcode List</TabsTrigger>
+          <TabsTrigger value="validate">Validate</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          <TabsTrigger value="claims">Claims</TabsTrigger>
         </TabsList>
 
+        {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-6">
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Statistics Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <Card className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Total Barcodes</p>
-                  <p className="text-3xl font-bold text-gray-900">{stats.totalBarcodes}</p>
+                  <p className="text-2xl font-bold">{totalBarcodes}</p>
                 </div>
-                <div className="p-3 bg-blue-100 rounded-full">
-                  <QrCode className="h-6 w-6 text-blue-600" />
-                </div>
+                <QrCode className="h-8 w-8 text-blue-600" />
               </div>
             </Card>
-
+            
             <Card className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Active Barcodes</p>
-                  <p className="text-3xl font-bold text-green-600">{stats.activeBarcodes}</p>
+                  <p className="text-sm font-medium text-gray-600">Active Warranties</p>
+                  <p className="text-2xl font-bold">{activeBarcodes}</p>
                 </div>
-                <div className="p-3 bg-green-100 rounded-full">
-                  <Shield className="h-6 w-6 text-green-600" />
-                </div>
+                <Shield className="h-8 w-8 text-green-600" />
               </div>
             </Card>
-
+            
+            <Card className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Used Barcodes</p>
+                  <p className="text-2xl font-bold">{usedBarcodes}</p>
+                </div>
+                <Package className="h-8 w-8 text-orange-600" />
+              </div>
+            </Card>
+            
             <Card className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Pending Claims</p>
-                  <p className="text-3xl font-bold text-yellow-600">{stats.pendingClaims}</p>
+                  <p className="text-2xl font-bold">{pendingClaims}</p>
                 </div>
-                <div className="p-3 bg-yellow-100 rounded-full">
-                  <Clock className="h-6 w-6 text-yellow-600" />
-                </div>
-              </div>
-            </Card>
-
-            <Card className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">In Repair</p>
-                  <p className="text-3xl font-bold text-purple-600">{stats.inRepairClaims}</p>
-                </div>
-                <div className="p-3 bg-purple-100 rounded-full">
-                  <Wrench className="h-6 w-6 text-purple-600" />
-                </div>
-              </div>
-            </Card>
-
-            <Card className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Completed</p>
-                  <p className="text-3xl font-bold text-green-600">{stats.completedClaims}</p>
-                </div>
-                <div className="p-3 bg-green-100 rounded-full">
-                  <CheckCircle className="h-6 w-6 text-green-600" />
-                </div>
-              </div>
-            </Card>
-
-            <Card className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Total Claims</p>
-                  <p className="text-3xl font-bold text-gray-600">{stats.totalClaims}</p>
-                </div>
-                <div className="p-3 bg-gray-100 rounded-full">
-                  <FileText className="h-6 w-6 text-gray-600" />
-                </div>
+                <Clock className="h-8 w-8 text-yellow-600" />
               </div>
             </Card>
           </div>
 
-          {/* Quick Actions */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <Card className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold">Recent Claims</h3>
-                <Button variant="outline" size="sm">View All</Button>
-              </div>
-              <div className="space-y-4">
-                {claims.slice(0, 5).map((claim) => (
-                  <div key={claim.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <FileText className="h-5 w-5 text-blue-600" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="font-medium text-gray-900">{claim.claimNumber}</div>
-                      <div className="text-sm text-gray-500">{claim.customerName} • {claim.productName}</div>
-                    </div>
-                    <div className="text-right">
-                      {getStatusBadge(claim.status)}
-                      <div className="text-xs text-gray-500 mt-1">{formatDate(claim.claimDate)}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Card>
-
-            <Card className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold">Product Warranty Status</h3>
-                <Button variant="outline" size="sm">Generate Barcodes</Button>
-              </div>
-              <div className="space-y-4">
-                {products.map((product) => {
-                  const productBarcodes = barcodes.filter(b => b.productId === product.id);
-                  const activeBarcodes = productBarcodes.filter(b => b.status === "active" && !b.isUsed);
-                  
-                  return (
-                    <div key={product.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                      <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                        <Package className="h-5 w-5 text-green-600" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="font-medium text-gray-900">{product.name}</div>
-                        <div className="text-sm text-gray-500">
-                          {product.warrantyPeriod} months warranty • {productBarcodes.length} barcodes
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-sm font-medium text-green-600">{activeBarcodes.length} Available</div>
-                        <div className="text-xs text-gray-500">{productBarcodes.length} Total</div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </Card>
-          </div>
+          {/* Recent Claims */}
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold">Recent Warranty Claims</h2>
+              <Button variant="outline" size="sm">View All</Button>
+            </div>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Claim Number</TableHead>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Product</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Date</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {warrantyClaims.slice(0, 5).map((claim) => (
+                    <TableRow key={claim.id}>
+                      <TableCell className="font-medium">{claim.claimNumber}</TableCell>
+                      <TableCell>{claim.customerName}</TableCell>
+                      <TableCell>{claim.productName}</TableCell>
+                      <TableCell>{getStatusBadge(claim.status)}</TableCell>
+                      <TableCell>{formatDate(claim.claimDate)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </Card>
         </TabsContent>
 
-        <TabsContent value="barcodes" className="space-y-6">
-          {/* Barcode Generator */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-6">Generate Warranty Barcodes</h3>
-              
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="product">Select Product</Label>
-                  <Select value={selectedProduct} onValueChange={setSelectedProduct}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choose a product" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {products.map((product) => (
-                        <SelectItem key={product.id} value={product.id}>
-                          {product.name} ({product.sku})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="quantity">Quantity</Label>
-                  <Input
-                    id="quantity"
-                    type="number"
-                    min="1"
-                    max="1000"
-                    value={bulkQuantity}
-                    onChange={(e) => setBulkQuantity(parseInt(e.target.value) || 1)}
-                    placeholder="Enter quantity"
-                  />
-                  <p className="text-sm text-gray-500 mt-1">
-                    Generate up to 1000 unique barcodes at once
-                  </p>
-                </div>
-
-                <Button 
-                  onClick={generateBarcodes}
-                  disabled={!selectedProduct || bulkQuantity < 1 || isGeneratingBarcodes}
-                  className="w-full flex items-center gap-2"
-                >
-                  {isGeneratingBarcodes ? (
-                    <RefreshCw className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <QrCode className="h-4 w-4" />
-                  )}
-                  {isGeneratingBarcodes ? "Generating..." : "Generate Barcodes"}
-                </Button>
-              </div>
-
-              {selectedProduct && (
-                <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-                  <h4 className="font-medium text-blue-900 mb-2">Preview</h4>
-                  <div className="text-sm text-blue-800">
-                    <p>Product: {products.find(p => p.id === selectedProduct)?.name}</p>
-                    <p>Warranty: {products.find(p => p.id === selectedProduct)?.warrantyPeriod} months</p>
-                    <p>Quantity: {bulkQuantity} barcode(s)</p>
-                    <p>Format: REX{new Date().toISOString().slice(0, 10).replace(/-/g, '')}XXXXX</p>
-                  </div>
-                </div>
-              )}
-            </Card>
-
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-6">Generated Barcodes</h3>
-              
-              <div className="space-y-3 max-h-96 overflow-y-auto">
-                {barcodes.slice(0, 10).map((barcode) => {
-                  const product = products.find(p => p.id === barcode.productId);
-                  return (
-                    <div key={barcode.id} className="flex items-center gap-3 p-3 border rounded-lg">
-                      <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center">
-                        <QrCode className="h-6 w-6 text-gray-600" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="font-medium text-sm">{barcode.barcodeNumber}</div>
-                        <div className="text-xs text-gray-500">{product?.name}</div>
-                        <div className="text-xs text-gray-400">Generated: {formatDate(barcode.generatedAt)}</div>
-                      </div>
-                      <div className="text-right">
-                        <Badge className={barcode.isUsed ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
-                          {barcode.isUsed ? "Used" : "Available"}
-                        </Badge>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              <div className="mt-4 pt-4 border-t">
-                <div className="flex justify-between text-sm text-gray-600">
-                  <span>Total Generated: {barcodes.length}</span>
-                  <span>Available: {barcodes.filter(b => !b.isUsed).length}</span>
-                </div>
-              </div>
-            </Card>
-          </div>
+        {/* Generate Tab - Using actual BarcodeGenerator component */}
+        <TabsContent value="generate">
+          <BarcodeGenerator />
         </TabsContent>
 
+        {/* Barcode List Tab - Using actual BarcodeList component */}
+        <TabsContent value="list">
+          <BarcodeList />
+        </TabsContent>
+
+        {/* Validate Tab - Using actual BarcodeValidator component */}
+        <TabsContent value="validate">
+          <BarcodeValidator />
+        </TabsContent>
+
+        {/* Analytics Tab - Using actual BarcodeStatsDashboard component */}
+        <TabsContent value="analytics">
+          <BarcodeStatsDashboard />
+        </TabsContent>
+
+        {/* Claims Management Tab */}
         <TabsContent value="claims" className="space-y-6">
-          {/* Claims Management */}
           <Card className="p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold">Warranty Claims Management</h2>
@@ -738,91 +484,78 @@ export default function WarrantyProgram() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredClaims.map((claim) => {
-                    const product = products.find(p => p.id === claim.productId);
-                    return (
-                      <TableRow key={claim.id}>
-                        <TableCell>
-                          <div className="font-medium">{claim.claimNumber}</div>
+                  {filteredClaims.map((claim) => (
+                    <TableRow key={claim.id}>
+                      <TableCell>
+                        <div className="font-medium">{claim.claimNumber}</div>
+                        <div className="text-sm text-gray-500">{claim.barcodeId}</div>
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{claim.customerName}</div>
+                          <div className="text-sm text-gray-500">{claim.customerEmail}</div>
+                          <div className="text-sm text-gray-500">{claim.customerPhone}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{claim.productName}</div>
                           <div className="text-sm text-gray-500">
-                            {claim.barcodeId}
+                            Purchased: {formatDate(claim.purchaseDate)}
                           </div>
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">{claim.customerName}</div>
-                            <div className="text-sm text-gray-500">{claim.customerEmail}</div>
-                            <div className="text-sm text-gray-500">{claim.customerPhone}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{claim.issueCategory}</div>
+                          <div className="text-sm text-gray-500 max-w-xs truncate">
+                            {claim.issueDescription}
                           </div>
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">{claim.productName}</div>
-                            <div className="text-sm text-gray-500">
-                              Purchased: {formatDate(claim.purchaseDate)}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">{claim.issueCategory}</div>
-                            <div className="text-sm text-gray-500 max-w-xs truncate">
-                              {claim.issueDescription}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>{getStatusBadge(claim.status)}</TableCell>
-                        <TableCell>{formatDate(claim.claimDate)}</TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedClaim(claim);
-                                setIsClaimDialogOpen(true);
-                              }}
-                              className="h-8 w-8 p-0"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            {claim.status === "pending" && (
-                              <>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => validateClaim(claim.id, true)}
-                                  className="h-8 w-8 p-0 text-green-600 hover:text-green-700"
-                                >
-                                  <Check className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => validateClaim(claim.id, false, "Invalid warranty claim")}
-                                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                                >
-                                  <X className="h-4 w-4" />
-                                </Button>
-                              </>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
+                        </div>
+                      </TableCell>
+                      <TableCell>{getStatusBadge(claim.status)}</TableCell>
+                      <TableCell>{formatDate(claim.claimDate)}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedClaim(claim);
+                              setIsClaimDialogOpen(true);
+                            }}
+                            className="h-8 w-8 p-0"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          {claim.status === "pending" && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => validateClaim(claim.id, true)}
+                                className="h-8 w-8 p-0 text-green-600 hover:text-green-700"
+                              >
+                                <Check className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => validateClaim(claim.id, false, "Invalid warranty claim")}
+                                className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
                 </TableBody>
               </Table>
             </div>
           </Card>
-        </TabsContent>
-
-        <TabsContent value="reports" className="space-y-6">
-          <div className="text-center py-12">
-            <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Warranty Reports</h3>
-            <p className="text-gray-600">View warranty analytics and reports</p>
-          </div>
         </TabsContent>
       </Tabs>
 
