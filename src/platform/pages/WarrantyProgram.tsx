@@ -80,6 +80,7 @@ import { BarcodeGenerator } from "../../components/barcode/BarcodeGenerator";
 import { BarcodeList } from "../../components/barcode/BarcodeList";
 import { BarcodeValidator } from "../../components/barcode/BarcodeValidator";
 import { BarcodeStatsDashboard } from "../../components/barcode/BarcodeStatsDashboard";
+import { ApiTestComponent } from "../../components/debug/ApiTestComponent";
 
 type WarrantyStatus = "active" | "expired" | "claimed" | "processing" | "repaired" | "replaced" | "denied";
 type ClaimStatus = "pending" | "validated" | "in_repair" | "repaired" | "shipped" | "completed" | "rejected";
@@ -330,13 +331,14 @@ export default function WarrantyProgram() {
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="generate">Generate</TabsTrigger>
           <TabsTrigger value="list">Barcode List</TabsTrigger>
           <TabsTrigger value="validate">Validate</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="claims">Claims</TabsTrigger>
+          <TabsTrigger value="debug">API Debug</TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
@@ -435,6 +437,11 @@ export default function WarrantyProgram() {
         {/* Analytics Tab - Using actual BarcodeStatsDashboard component */}
         <TabsContent value="analytics">
           <BarcodeStatsDashboard />
+        </TabsContent>
+
+        {/* API Debug Tab */}
+        <TabsContent value="debug">
+          <ApiTestComponent />
         </TabsContent>
 
         {/* Claims Management Tab */}

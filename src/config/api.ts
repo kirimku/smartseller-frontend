@@ -28,6 +28,13 @@ export const API_ENDPOINTS = {
     REGISTER: '/auth/register',
   },
 
+  // Users
+  USERS: {
+    ME: '/users/me',
+    GET: (id: string) => `/users/${id}`,
+    UPDATE: (id: string) => `/users/${id}`,
+  },
+
   // Tenants
   TENANTS: {
     LIST: '/tenants',

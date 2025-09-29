@@ -1,20 +1,19 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { 
-  useLogin, 
-  useLogout, 
-  useAuthStatus, 
-  useForgotPassword, 
-  useResetPassword,
-  useUserProfile
-} from '../stores/auth-store';
-// User types are now embedded in the login response
-import { getErrorMessage } from '../lib/api-client';
+import { enhancedApiClient, getErrorMessage } from '../lib/security/enhanced-api-client';
+import { SecureTokenManager } from '../lib/security/secure-token-manager';
 import { ErrorHandler, requiresReauth } from '../lib/error-handler';
 import { useQueryClient } from '@tanstack/react-query';
 
 export type UserRole = 'admin' | 'user' | 'manager' | null;
 
-// Actual backend UserDto structure (different from generated types)
+// API response interface
+interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  message?: string;
+}
+
+// Backend user DTO interface
 interface BackendUserDto {
   id: string;
   email: string;
@@ -34,7 +33,7 @@ interface BackendUserDto {
   updated_at: string;
 }
 
-// Basic User interface from authentication
+// Frontend user interface
 export interface User {
   id: string;
   email: string;
@@ -47,28 +46,27 @@ export interface User {
   lastLoginAt?: string;
 }
 
-// Convert UserDto to User
+// Map backend DTO to frontend interface
 const mapUserDtoToUser = (userDto: BackendUserDto | null): User | null => {
   if (!userDto) return null;
-  
-  console.log('🔐 [AuthContext] Raw UserDto received:', userDto);
-  console.log('🔐 [AuthContext] UserDto user_role field:', userDto.user_role);
-  console.log('🔐 [AuthContext] UserDto user_role type:', typeof userDto.user_role);
-  
-  const mappedUser = {
+
+  let role: UserRole = 'user';
+  if (userDto.is_admin) {
+    role = 'admin';
+  } else if (userDto.user_role === 'manager') {
+    role = 'manager';
+  }
+
+  return {
     id: userDto.id,
     email: userDto.email,
-    name: userDto.name || '',
-    role: userDto.user_role as UserRole, // Use user_role from actual backend response
-    avatar: undefined, // UserDto doesn't have avatar property
-    createdAt: userDto.created_at || new Date().toISOString(),
-    lastLoginAt: userDto.updated_at || undefined,
+    name: userDto.name,
+    role,
+    avatar: userDto.picture,
+    permissions: userDto.is_admin ? ['admin'] : [],
+    createdAt: userDto.created_at,
+    lastLoginAt: userDto.updated_at,
   };
-  
-  console.log('🔐 [AuthContext] Mapped user:', mappedUser);
-  console.log('🔐 [AuthContext] User role (backend):', mappedUser.role);
-  
-  return mappedUser;
 };
 
 export interface AuthContextType {
@@ -91,56 +89,82 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [error, setError] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
   const queryClient = useQueryClient();
-  
-  // Use auth store hooks
-  const { user: userDto, isAuthenticated, isLoading: authLoading } = useAuthStatus();
-  const { refetch: refetchUserProfile } = useUserProfile();
-  const loginMutation = useLogin();
-  const logoutMutation = useLogout();
-  const forgotPasswordMutation = useForgotPassword();
-  const resetPasswordMutation = useResetPassword();
 
-  // Convert UserDto to User
-  const user = mapUserDtoToUser(userDto as unknown as BackendUserDto);
-
-  // Auto-fetch user data when authenticated but user is null
-  useEffect(() => {
-    if (isAuthenticated && !user && !authLoading) {
-      console.log('🔐 [AuthContext] User is authenticated but user data is null, fetching user profile...');
-      refetchUserProfile();
+  // Fetch user profile data
+  const fetchUserProfile = async (): Promise<User | null> => {
+    try {
+      const response = await enhancedApiClient.getClient().get({
+        url: '/api/v1/users/me'
+      });
+      
+      const responseData = response.data as ApiResponse<BackendUserDto>;
+      if (responseData && responseData.success && responseData.data) {
+        return mapUserDtoToUser(responseData.data);
+      }
+      return null;
+    } catch (error) {
+      console.error('🔐 [AuthContext] Failed to fetch user profile:', error);
+      return null;
     }
-  }, [isAuthenticated, user, authLoading, refetchUserProfile]);
+  };
+
+  // Initialize authentication state
+  useEffect(() => {
+    const initializeAuth = async () => {
+      try {
+        setLoading(true);
+        await enhancedApiClient.initialize();
+        const isAuth = await enhancedApiClient.isAuthenticated();
+        setIsAuthenticated(isAuth);
+        
+        if (isAuth) {
+          const userData = await fetchUserProfile();
+          setUser(userData);
+        }
+      } catch (err) {
+        console.error('🔐 [AuthContext] Failed to initialize auth:', err);
+        setIsAuthenticated(false);
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initializeAuth();
+  }, []);
 
   // Handle auth logout events from API client
   useEffect(() => {
     const handleAuthLogout = () => {
-      logoutMutation.mutate();
+      setIsAuthenticated(false);
+      setUser(null);
+      queryClient.clear();
     };
 
     window.addEventListener('auth:logout', handleAuthLogout);
     return () => window.removeEventListener('auth:logout', handleAuthLogout);
-  }, [logoutMutation]);
-
-  // Clear error when mutations succeed
-  useEffect(() => {
-    if (loginMutation.isSuccess || logoutMutation.isSuccess) {
-      setError(null);
-    }
-  }, [loginMutation.isSuccess, logoutMutation.isSuccess]);
+  }, [queryClient]);
 
   const login = async (email: string, password: string): Promise<void> => {
     console.log('🔐 [AuthContext] Starting login process for:', email);
     try {
       setError(null);
-      console.log('🔐 [AuthContext] Calling loginMutation.mutateAsync...');
-      await loginMutation.mutateAsync({ email_or_phone: email, password });
-      console.log('🔐 [AuthContext] Login mutation completed successfully');
-      console.log('🔐 [AuthContext] Current auth status after login:', { 
-        user: user?.email, 
-        isAuthenticated, 
-        loading 
-      });
+      setLoading(true);
+      
+      const success = await enhancedApiClient.login({ email_or_phone: email, password });
+      
+      if (success) {
+        setIsAuthenticated(true);
+        const userData = await fetchUserProfile();
+        setUser(userData);
+        console.log('🔐 [AuthContext] Login completed successfully');
+      } else {
+        throw new Error('Login failed');
+      }
     } catch (err) {
       console.error('🔐 [AuthContext] Login failed:', err);
       const parsedError = ErrorHandler.parseError(err);
@@ -150,19 +174,29 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // If it's an auth error that requires re-authentication, handle it
       if (requiresReauth(err)) {
         console.log('🔐 [AuthContext] Clearing stored auth data due to reauth requirement');
-        // Clear any stored auth data
-        localStorage.removeItem('auth_token');
-        sessionStorage.removeItem('auth_token');
+        await SecureTokenManager.clearTokens();
       }
       
       throw new Error(errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
   const loginWithPhone = async (phone: string, password: string): Promise<void> => {
     try {
       setError(null);
-      await loginMutation.mutateAsync({ email_or_phone: phone, password });
+      setLoading(true);
+      
+      const success = await enhancedApiClient.login({ email_or_phone: phone, password });
+      
+      if (success) {
+        setIsAuthenticated(true);
+        const userData = await fetchUserProfile();
+        setUser(userData);
+      } else {
+        throw new Error('Login failed');
+      }
     } catch (err) {
       const parsedError = ErrorHandler.parseError(err);
       const errorMessage = ErrorHandler.getUserMessage(parsedError);
@@ -170,53 +204,75 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       
       // If it's an auth error that requires re-authentication, handle it
       if (requiresReauth(err)) {
-        // Clear any stored auth data
-        localStorage.removeItem('auth_token');
-        sessionStorage.removeItem('auth_token');
+        await SecureTokenManager.clearTokens();
       }
       
       throw new Error(errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
   const logout = async (): Promise<void> => {
     try {
       setError(null);
-      await logoutMutation.mutateAsync();
+      setLoading(true);
+      await enhancedApiClient.logout();
+      setIsAuthenticated(false);
+      setUser(null);
+      queryClient.clear();
     } catch (err) {
       const message = getErrorMessage(err);
       setError(message);
+      // Even if logout fails, clear local state
+      setIsAuthenticated(false);
+      setUser(null);
+      queryClient.clear();
       throw new Error(message);
+    } finally {
+      setLoading(false);
     }
   };
 
   const forgotPassword = async (email: string): Promise<void> => {
     try {
       setError(null);
-      await forgotPasswordMutation.mutateAsync({ email_or_phone: email });
+      setLoading(true);
+      
+      await enhancedApiClient.getClient().post({
+        url: '/api/v1/auth/forgot-password',
+        body: { email_or_phone: email }
+      });
     } catch (err) {
       const errorMessage = getErrorMessage(err);
       setError(errorMessage);
       throw new Error(errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
   const resetPassword = async (token: string, newPassword: string): Promise<void> => {
     try {
       setError(null);
-      await resetPasswordMutation.mutateAsync({ 
-        token, 
-        new_password: newPassword,
-        confirm_password: newPassword
+      setLoading(true);
+      
+      await enhancedApiClient.getClient().post({
+        url: '/api/v1/auth/reset-password',
+        body: { 
+          token, 
+          new_password: newPassword,
+          confirm_password: newPassword
+        }
       });
     } catch (err) {
       const errorMessage = getErrorMessage(err);
       setError(errorMessage);
       throw new Error(errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
-
-
 
   const hasRole = (role: UserRole): boolean => {
     console.log('🔐 [AuthContext] hasRole check:', {
@@ -240,27 +296,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const refreshUserData = async (): Promise<void> => {
     try {
       console.log('🔐 [AuthContext] Manually refreshing user data...');
-      await refetchUserProfile();
+      setLoading(true);
+      const userData = await fetchUserProfile();
+      setUser(userData);
     } catch (error) {
       console.error('🔐 [AuthContext] Failed to refresh user data:', error);
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
-// Combine loading states
-  const loading = authLoading || 
-    loginMutation.isPending || 
-    logoutMutation.isPending || 
-    forgotPasswordMutation.isPending || 
-    resetPasswordMutation.isPending;
 
   const contextValue: AuthContextType = {
     user,
     loading,
-    error: error || 
-      (loginMutation.error ? getErrorMessage(loginMutation.error) : null) ||
-      (logoutMutation.error ? getErrorMessage(logoutMutation.error) : null) ||
-      (forgotPasswordMutation.error ? getErrorMessage(forgotPasswordMutation.error) : null) ||
-      (resetPasswordMutation.error ? getErrorMessage(resetPasswordMutation.error) : null),
+    error,
     isAuthenticated,
     login,
     loginWithPhone,

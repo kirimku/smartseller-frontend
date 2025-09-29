@@ -1,41 +1,48 @@
 // Debug helper to expose authentication utilities to window for testing
-import { TokenManager, apiClient } from './lib/api-client';
+import { SecureTokenManager } from './lib/security/secure-token-manager';
+import { enhancedApiClient } from './lib/security/enhanced-api-client';
 
-// Expose TokenManager and apiClient to window for debugging
+// Expose SecureTokenManager and enhancedApiClient to window for debugging
 declare global {
   interface Window {
-    TokenManager: typeof TokenManager;
-    apiClient: typeof apiClient;
-    setTestToken: (token: string) => void;
-    clearTestTokens: () => void;
+    SecureTokenManager: typeof SecureTokenManager;
+    enhancedApiClient: typeof enhancedApiClient;
+    setTestToken: (accessToken: string, refreshToken?: string) => Promise<void>;
+    clearTestTokens: () => Promise<void>;
     testApiCall: () => Promise<void>;
+    testLogin: (email: string, password: string) => Promise<void>;
+    checkAuthStatus: () => Promise<void>;
   }
 }
 
-// Helper function to set a test token
-const setTestToken = (token: string) => {
-  // Set a test token with a future expiry date (1 hour from now)
-  const expiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
-  TokenManager.setAccessToken(token);
-  TokenManager.setRefreshToken('test-refresh-token');
-  TokenManager.setTokenExpiry(expiry);
-  console.log('Test token set successfully');
-  console.log('Access Token:', TokenManager.getAccessToken());
-  console.log('Token Expiry:', TokenManager.getTokenExpiry());
-  console.log('Is Expired:', TokenManager.isTokenExpired());
+// Helper function to set test tokens
+const setTestToken = async (accessToken: string, refreshToken = 'test-refresh-token') => {
+  try {
+    // Set tokens with 1 hour expiry
+    const expiresIn = 3600; // 1 hour in seconds
+    await SecureTokenManager.setTokens(accessToken, refreshToken, expiresIn);
+    console.log('Test tokens set successfully');
+    console.log('Tokens are now stored securely');
+  } catch (error) {
+    console.error('Failed to set test tokens:', error);
+  }
 };
 
 // Helper function to clear tokens
-const clearTestTokens = () => {
-  TokenManager.clearTokens();
-  console.log('All tokens cleared');
+const clearTestTokens = async () => {
+  try {
+    await SecureTokenManager.clearTokens();
+    console.log('All tokens cleared');
+  } catch (error) {
+    console.error('Failed to clear tokens:', error);
+  }
 };
 
 // Helper function to test an API call
 const testApiCall = async () => {
   try {
     console.log('Testing API call with current token...');
-    const response = await apiClient.instance.get('/api/v1/products');
+    const response = await enhancedApiClient.getClient().get({ url: '/api/v1/products' });
     console.log('API call successful:', response.data);
   } catch (error: unknown) {
     const axiosError = error as { response?: { status?: number; data?: unknown }; message?: string };
@@ -43,20 +50,52 @@ const testApiCall = async () => {
   }
 };
 
+// Helper function to test login
+const testLogin = async (email: string, password: string) => {
+  try {
+    console.log('Testing login with:', email);
+    const success = await enhancedApiClient.login({ email_or_phone: email, password });
+    if (success) {
+      console.log('Login successful');
+    } else {
+      console.log('Login failed');
+    }
+  } catch (error) {
+    console.error('Login error:', error);
+  }
+};
+
+// Helper function to check authentication status
+const checkAuthStatus = async () => {
+  try {
+    const isAuth = await enhancedApiClient.isAuthenticated();
+    const authStatus = await enhancedApiClient.getAuthStatus();
+    console.log('Authentication Status:', {
+      isAuthenticated: isAuth,
+      authStatus
+    });
+  } catch (error) {
+    console.error('Failed to check auth status:', error);
+  }
+};
+
 // Expose to window
 if (typeof window !== 'undefined') {
-  window.TokenManager = TokenManager;
-  window.apiClient = apiClient;
+  window.SecureTokenManager = SecureTokenManager;
+  window.enhancedApiClient = enhancedApiClient;
   window.setTestToken = setTestToken;
   window.clearTestTokens = clearTestTokens;
   window.testApiCall = testApiCall;
-  
-  console.log('Debug helpers exposed to window:');
-  console.log('- window.TokenManager');
-  console.log('- window.apiClient');
-  console.log('- window.setTestToken(token)');
-  console.log('- window.clearTestTokens()');
-  console.log('- window.testApiCall()');
+  window.testLogin = testLogin;
+  window.checkAuthStatus = checkAuthStatus;
 }
 
-export { TokenManager, apiClient, setTestToken, clearTestTokens, testApiCall };
+export { 
+  SecureTokenManager, 
+  enhancedApiClient, 
+  setTestToken, 
+  clearTestTokens, 
+  testApiCall, 
+  testLogin, 
+  checkAuthStatus 
+};

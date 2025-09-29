@@ -16,7 +16,7 @@ import {
   Download
 } from 'lucide-react';
 import { useToast } from '../../hooks/use-toast';
-import { apiClient } from '../../lib/api-client';
+import { enhancedApiClient } from '../../lib/security/enhanced-api-client';
 
 interface BarcodeStats {
   total_generated: number;
@@ -66,7 +66,7 @@ export const BarcodeStatsDashboard: React.FC = () => {
   const fetchStats = async () => {
     setLoading(true);
     try {
-      const response = await apiClient.get({
+      const response = await enhancedApiClient.getClient().get({
         url: '/api/v1/admin/warranty/barcodes/stats',
         params: { time_range: timeRange }
       });
@@ -133,7 +133,7 @@ export const BarcodeStatsDashboard: React.FC = () => {
 
   const exportStats = async () => {
     try {
-      const response = await apiClient.get({
+      const response = await enhancedApiClient.getClient().get({
         url: '/api/v1/admin/warranty/barcodes/stats/export',
         params: { time_range: timeRange },
         responseType: 'blob'

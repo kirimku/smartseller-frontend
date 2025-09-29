@@ -8,7 +8,7 @@
 
 import { EnhancedApiClient } from './security/enhanced-api-client';
 import { SecureTokenManager } from './security/secure-token-manager';
-import { TokenManager } from './api-client';
+import { SecureTokenManager as TokenManager } from './security/secure-token-manager';
 import type { Client } from '../generated/api/client';
 
 /**

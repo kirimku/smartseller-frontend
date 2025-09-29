@@ -181,6 +181,75 @@ components:
           example: true
           description: Whether there are more pages
 
+    # User Profile Schemas
+    UserProfileResponse:
+      type: object
+      description: User profile information
+      required:
+        - id
+        - email
+        - first_name
+        - last_name
+        - tier
+        - wallet_balance
+        - transaction_count
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: User unique identifier
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        email:
+          type: string
+          format: email
+          description: User email address
+          example: "john.doe@example.com"
+        first_name:
+          type: string
+          description: User first name
+          example: "John"
+        last_name:
+          type: string
+          description: User last name
+          example: "Doe"
+        phone:
+          type: string
+          nullable: true
+          description: User phone number
+          example: "+1234567890"
+        avatar_url:
+          type: string
+          format: uri
+          nullable: true
+          description: User avatar image URL
+          example: "https://example.com/avatar.jpg"
+        tier:
+          type: string
+          enum: [basic, premium, enterprise]
+          description: User subscription tier
+          example: "premium"
+        wallet_balance:
+          type: number
+          format: decimal
+          description: Current wallet balance
+          example: 1250.75
+        transaction_count:
+          type: integer
+          description: Total number of transactions
+          example: 42
+        created_at:
+          type: string
+          format: date-time
+          description: Account creation timestamp
+          example: "2023-01-15T10:30:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          description: Last profile update timestamp
+          example: "2023-01-15T10:30:00Z"
+
     # Customer Schemas
     CustomerRegistrationRequest:
       type: object
@@ -1642,6 +1711,51 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '500':
           $ref: '#/components/responses/InternalServerError'
+
+  # User Profile Endpoints
+  /api/v1/users/me:
+    get:
+      summary: Get current user profile
+      description: |
+        Retrieves the current authenticated user's profile information including:
+        - Basic user details (name, email, phone, etc.)
+        - User tier/membership level (pendekar, tuan_muda, tuan_besar, tuan_raja)
+        - Wallet balance and wallet ID
+        - Transaction count and account status
+        
+        **Authentication Required**: This endpoint requires a valid Bearer token.
+      tags:
+        - User Profile
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "User profile retrieved successfully"
+                  data:
+                    $ref: '#/components/schemas/UserProfileResponse'
+        '401':
+          description: Unauthorized - Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   # Customer Management Endpoints
   /customers/register:

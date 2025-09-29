@@ -103,6 +103,56 @@ export type PaginationMeta = {
 };
 
 /**
+ * User profile information
+ */
+export type UserProfileResponse = {
+    /**
+     * User unique identifier
+     */
+    id: string;
+    /**
+     * User email address
+     */
+    email: string;
+    /**
+     * User first name
+     */
+    first_name: string;
+    /**
+     * User last name
+     */
+    last_name: string;
+    /**
+     * User phone number
+     */
+    phone?: string | null;
+    /**
+     * User avatar image URL
+     */
+    avatar_url?: string | null;
+    /**
+     * User subscription tier
+     */
+    tier: 'basic' | 'premium' | 'enterprise';
+    /**
+     * Current wallet balance
+     */
+    wallet_balance: number;
+    /**
+     * Total number of transactions
+     */
+    transaction_count: number;
+    /**
+     * Account creation timestamp
+     */
+    created_at: string;
+    /**
+     * Last profile update timestamp
+     */
+    updated_at: string;
+};
+
+/**
  * Request payload for customer registration
  */
 export type CustomerRegistrationRequest = {
@@ -1037,6 +1087,39 @@ export type PostApiV1AuthResetPasswordResponses = {
 };
 
 export type PostApiV1AuthResetPasswordResponse = PostApiV1AuthResetPasswordResponses[keyof PostApiV1AuthResetPasswordResponses];
+
+export type GetApiV1UsersMeData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/users/me';
+};
+
+export type GetApiV1UsersMeErrors = {
+    /**
+     * Unauthorized - Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * Internal server error
+     */
+    500: ErrorResponse;
+};
+
+export type GetApiV1UsersMeError = GetApiV1UsersMeErrors[keyof GetApiV1UsersMeErrors];
+
+export type GetApiV1UsersMeResponses = {
+    /**
+     * User profile retrieved successfully
+     */
+    200: {
+        success?: boolean;
+        message?: string;
+        data?: UserProfileResponse;
+    };
+};
+
+export type GetApiV1UsersMeResponse = GetApiV1UsersMeResponses[keyof GetApiV1UsersMeResponses];
 
 export type PostCustomersRegisterData = {
     body: CustomerRegistrationRequest;

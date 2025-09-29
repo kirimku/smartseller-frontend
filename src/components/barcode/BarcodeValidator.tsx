@@ -17,7 +17,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { useToast } from '../../hooks/use-toast';
-import { apiClient } from '../../lib/api-client';
+import { enhancedApiClient } from '../../lib/security/enhanced-api-client';
 
 interface BarcodeValidationResult {
   barcode: string;
@@ -77,7 +77,7 @@ export const BarcodeValidator: React.FC = () => {
     setResult(null);
 
     try {
-      const response = await apiClient.get({
+      const response = await enhancedApiClient.getClient().get({
         url: `/api/v1/admin/warranty/barcodes/${encodeURIComponent(barcode.trim())}/validate`
       });
 

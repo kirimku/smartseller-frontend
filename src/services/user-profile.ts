@@ -8,8 +8,8 @@
  * - Integration with secure authentication
  */
 
-import { getApiV1UsersMe } from '../generated/api/user/sdk.gen';
-import type { UserProfileResponse } from '../generated/api/user/types.gen';
+import { getApiV1UsersMe } from '../generated/api/sdk.gen';
+import type { UserProfileResponse } from '../generated/api/types.gen';
 import { enhancedApiClient } from '../lib/security/enhanced-api-client';
 
 export interface UserProfileData extends UserProfileResponse {

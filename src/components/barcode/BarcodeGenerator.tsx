@@ -8,7 +8,7 @@ import { Textarea } from '../ui/textarea';
 import { Alert, AlertDescription } from '../ui/alert';
 import { Loader2, Package, AlertCircle, CheckCircle } from 'lucide-react';
 import { useToast } from '../../hooks/use-toast';
-import { apiClient } from '../../lib/api-client';
+import { enhancedApiClient } from '../../lib/security/enhanced-api-client';
 
 interface BarcodeGenerationForm {
   product_id: string;
@@ -39,7 +39,7 @@ interface ApiResponse<T> {
 }
 
 interface ProductsResponse {
-  data: Product[];
+  products: Product[];
   pagination?: {
     page: number;
     total_pages: number;
@@ -77,14 +77,32 @@ export const BarcodeGenerator: React.FC = () => {
     const fetchProducts = async () => {
       try {
         setLoadingProducts(true);
-        const response = await apiClient.get({
-          url: '/api/v1/admin/products',
+        console.log('🔍 [BarcodeGenerator] About to fetch products...');
+        
+        // Check token status
+        const token = localStorage.getItem('smartseller_access_token');
+        const expiry = localStorage.getItem('smartseller_token_expiry');
+        console.log('🔍 [BarcodeGenerator] Token available:', !!token);
+        console.log('🔍 [BarcodeGenerator] Token expiry:', expiry);
+        if (expiry) {
+          const expiryDate = new Date(expiry);
+          const now = new Date();
+          console.log('🔍 [BarcodeGenerator] Token expired:', now >= expiryDate);
+        }
+        
+        console.log('🔍 [BarcodeGenerator] Enhanced API Client instance:', enhancedApiClient);
+        console.log('🔍 [BarcodeGenerator] Enhanced API Client axios instance:', enhancedApiClient.getClient().instance);
+        
+        const response = await enhancedApiClient.getClient().get({
+          url: '/api/v1/products',
           params: { limit: 100 } // Get first 100 products
         });
         
+        console.log('🔍 [BarcodeGenerator] Products response:', response);
+        
         const apiResponse = response.data as ApiResponse<ProductsResponse>;
-        if (apiResponse?.success && apiResponse?.data?.data) {
-          setProducts(apiResponse.data.data);
+        if (apiResponse?.success && apiResponse?.data?.products) {
+          setProducts(apiResponse.data.products);
         }
       } catch (error) {
         console.error('Failed to fetch products:', error);
@@ -108,9 +126,9 @@ export const BarcodeGenerator: React.FC = () => {
     setResult(null);
     
     try {
-      const response = await apiClient.post({
+      const response = await enhancedApiClient.getClient().post({
         url: '/api/v1/admin/warranty/barcodes/generate',
-        data: formData
+        body: formData
       });
       
       const apiResponse = response.data as ApiResponse<GenerationResult>;

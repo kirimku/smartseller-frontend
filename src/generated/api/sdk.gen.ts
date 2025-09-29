@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { DeleteAddressesByIdData, DeleteAddressesByIdErrors, DeleteAddressesByIdResponses, DeleteApiV1ProductsByIdData, DeleteApiV1ProductsByIdErrors, DeleteApiV1ProductsByIdResponses, DeleteStorefrontsByIdData, DeleteStorefrontsByIdErrors, DeleteStorefrontsByIdResponses, GetAddressesByIdData, GetAddressesByIdErrors, GetAddressesByIdResponses, GetApiV1CategoriesData, GetApiV1CategoriesErrors, GetApiV1CategoriesResponses, GetApiV1ProductsByIdData, GetApiV1ProductsByIdErrors, GetApiV1ProductsByIdResponses, GetApiV1ProductsData, GetApiV1ProductsErrors, GetApiV1ProductsResponses, GetCustomersByIdAddressesData, GetCustomersByIdAddressesErrors, GetCustomersByIdAddressesResponses, GetCustomersByIdData, GetCustomersByIdErrors, GetCustomersByIdResponses, GetStorefrontsByIdData, GetStorefrontsByIdErrors, GetStorefrontsByIdResponses, GetStorefrontsSlugBySlugData, GetStorefrontsSlugBySlugErrors, GetStorefrontsSlugBySlugResponses, PostApiV1AuthForgotPasswordData, PostApiV1AuthForgotPasswordErrors, PostApiV1AuthForgotPasswordResponses, PostApiV1AuthLoginData, PostApiV1AuthLoginErrors, PostApiV1AuthLoginResponses, PostApiV1AuthLogoutData, PostApiV1AuthLogoutResponses, PostApiV1AuthRefreshData, PostApiV1AuthRefreshErrors, PostApiV1AuthRefreshResponses, PostApiV1AuthResetPasswordData, PostApiV1AuthResetPasswordErrors, PostApiV1AuthResetPasswordResponses, PostApiV1ProductsByProductIdVariantOptionsData, PostApiV1ProductsByProductIdVariantOptionsErrors, PostApiV1ProductsByProductIdVariantOptionsResponses, PostApiV1ProductsByProductIdVariantsData, PostApiV1ProductsByProductIdVariantsErrors, PostApiV1ProductsByProductIdVariantsGenerateData, PostApiV1ProductsByProductIdVariantsGenerateErrors, PostApiV1ProductsByProductIdVariantsGenerateResponses, PostApiV1ProductsByProductIdVariantsResponses, PostApiV1ProductsData, PostApiV1ProductsErrors, PostApiV1ProductsResponses, PostCustomersByIdAddressesData, PostCustomersByIdAddressesErrors, PostCustomersByIdAddressesResponses, PostCustomersRegisterData, PostCustomersRegisterErrors, PostCustomersRegisterResponses, PostStorefrontsData, PostStorefrontsErrors, PostStorefrontsResponses, PutApiV1ProductsByIdData, PutApiV1ProductsByIdErrors, PutApiV1ProductsByIdResponses, PutCustomersByIdData, PutCustomersByIdErrors, PutCustomersByIdResponses } from './types.gen';
+import type { DeleteAddressesByIdData, DeleteAddressesByIdErrors, DeleteAddressesByIdResponses, DeleteApiV1ProductsByIdData, DeleteApiV1ProductsByIdErrors, DeleteApiV1ProductsByIdResponses, DeleteStorefrontsByIdData, DeleteStorefrontsByIdErrors, DeleteStorefrontsByIdResponses, GetAddressesByIdData, GetAddressesByIdErrors, GetAddressesByIdResponses, GetApiV1CategoriesData, GetApiV1CategoriesErrors, GetApiV1CategoriesResponses, GetApiV1ProductsByIdData, GetApiV1ProductsByIdErrors, GetApiV1ProductsByIdResponses, GetApiV1ProductsData, GetApiV1ProductsErrors, GetApiV1ProductsResponses, GetApiV1UsersMeData, GetApiV1UsersMeErrors, GetApiV1UsersMeResponses, GetCustomersByIdAddressesData, GetCustomersByIdAddressesErrors, GetCustomersByIdAddressesResponses, GetCustomersByIdData, GetCustomersByIdErrors, GetCustomersByIdResponses, GetStorefrontsByIdData, GetStorefrontsByIdErrors, GetStorefrontsByIdResponses, GetStorefrontsSlugBySlugData, GetStorefrontsSlugBySlugErrors, GetStorefrontsSlugBySlugResponses, PostApiV1AuthForgotPasswordData, PostApiV1AuthForgotPasswordErrors, PostApiV1AuthForgotPasswordResponses, PostApiV1AuthLoginData, PostApiV1AuthLoginErrors, PostApiV1AuthLoginResponses, PostApiV1AuthLogoutData, PostApiV1AuthLogoutResponses, PostApiV1AuthRefreshData, PostApiV1AuthRefreshErrors, PostApiV1AuthRefreshResponses, PostApiV1AuthResetPasswordData, PostApiV1AuthResetPasswordErrors, PostApiV1AuthResetPasswordResponses, PostApiV1ProductsByProductIdVariantOptionsData, PostApiV1ProductsByProductIdVariantOptionsErrors, PostApiV1ProductsByProductIdVariantOptionsResponses, PostApiV1ProductsByProductIdVariantsData, PostApiV1ProductsByProductIdVariantsErrors, PostApiV1ProductsByProductIdVariantsGenerateData, PostApiV1ProductsByProductIdVariantsGenerateErrors, PostApiV1ProductsByProductIdVariantsGenerateResponses, PostApiV1ProductsByProductIdVariantsResponses, PostApiV1ProductsData, PostApiV1ProductsErrors, PostApiV1ProductsResponses, PostCustomersByIdAddressesData, PostCustomersByIdAddressesErrors, PostCustomersByIdAddressesResponses, PostCustomersRegisterData, PostCustomersRegisterErrors, PostCustomersRegisterResponses, PostStorefrontsData, PostStorefrontsErrors, PostStorefrontsResponses, PutApiV1ProductsByIdData, PutApiV1ProductsByIdErrors, PutApiV1ProductsByIdResponses, PutCustomersByIdData, PutCustomersByIdErrors, PutCustomersByIdResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -103,6 +103,31 @@ export const postApiV1AuthResetPassword = <ThrowOnError extends boolean = false>
             'Content-Type': 'application/json',
             ...options.headers
         }
+    });
+};
+
+/**
+ * Get current user profile
+ * Retrieves the current authenticated user's profile information including:
+ * - Basic user details (name, email, phone, etc.)
+ * - User tier/membership level (pendekar, tuan_muda, tuan_besar, tuan_raja)
+ * - Wallet balance and wallet ID
+ * - Transaction count and account status
+ *
+ * **Authentication Required**: This endpoint requires a valid Bearer token.
+ *
+ */
+export const getApiV1UsersMe = <ThrowOnError extends boolean = false>(options?: Options<GetApiV1UsersMeData, ThrowOnError>) => {
+    return (options?.client ?? client).get<GetApiV1UsersMeResponses, GetApiV1UsersMeErrors, ThrowOnError>({
+        responseType: 'json',
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/api/v1/users/me',
+        ...options
     });
 };
 

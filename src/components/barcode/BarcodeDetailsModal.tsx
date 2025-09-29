@@ -28,7 +28,7 @@ import {
   History
 } from 'lucide-react';
 import { useToast } from '../../hooks/use-toast';
-import { apiClient } from '../../lib/api-client';
+import { enhancedApiClient } from '../../lib/security/enhanced-api-client';
 
 interface BarcodeDetails {
   id: string;
@@ -112,7 +112,7 @@ export const BarcodeDetailsModal: React.FC<BarcodeDetailsModalProps> = ({
     setError(null);
 
     try {
-      const response = await apiClient.get({
+      const response = await enhancedApiClient.getClient().get({
         url: `/api/v1/admin/warranty/barcodes/${barcodeId}`
       });
 
@@ -140,9 +140,9 @@ export const BarcodeDetailsModal: React.FC<BarcodeDetailsModalProps> = ({
     setActionLoading(action);
 
     try {
-      const response = await apiClient.post({
+      const response = await enhancedApiClient.getClient().post({
         url: endpoint,
-        data: { barcode_id: barcodeId }
+        body: { barcode_id: barcodeId }
       });
 
       const apiResponse = response.data as ApiResponse<{ message: string }>;

@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { Search, Filter, Download, Eye, MoreHorizontal } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { useToast } from '../../hooks/use-toast';
-import { apiClient } from '../../lib/api-client';
+import { enhancedApiClient } from '../../lib/security/enhanced-api-client';
 
 interface Barcode {
   id: string;
@@ -85,7 +85,7 @@ export const BarcodeList: React.FC<BarcodeListProps> = ({ onViewDetails }) => {
         params.status = statusFilter;
       }
 
-      const response = await apiClient.get({
+      const response = await enhancedApiClient.getClient().get({
         url: '/api/v1/admin/warranty/barcodes',
         params
       });
@@ -129,7 +129,7 @@ export const BarcodeList: React.FC<BarcodeListProps> = ({ onViewDetails }) => {
         params.status = statusFilter;
       }
 
-      const response = await apiClient.get({
+      const response = await enhancedApiClient.getClient().get({
         url: '/api/v1/admin/warranty/barcodes/export',
         params,
         responseType: 'blob'
