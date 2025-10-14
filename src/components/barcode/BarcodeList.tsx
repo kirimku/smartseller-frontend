@@ -10,6 +10,21 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useToast } from '../../hooks/use-toast';
 import { enhancedApiClient } from '../../lib/security/enhanced-api-client';
 
+// API payload for barcodes
+interface ApiBarcode {
+  id: string;
+  product_id: string;
+  product_name: string;
+  product_sku: string;
+  barcode_value: string;
+  status: string; // e.g. "generated"
+  expiry_date: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// Internal model used for rendering in this component
 interface Barcode {
   id: string;
   barcode: string;
@@ -17,7 +32,7 @@ interface Barcode {
   product_name: string;
   batch_id: string;
   batch_name: string;
-  status: 'active' | 'used' | 'expired' | 'revoked';
+  status: 'active' | 'used' | 'expired' | 'revoked' | 'generated' | string;
   created_at: string;
   expires_at: string;
   used_at?: string;
@@ -25,14 +40,18 @@ interface Barcode {
   warranty_claim_id?: string;
 }
 
+interface PaginationInfo {
+  page?: number;
+  total_pages: number;
+  total_items: number;
+  has_next: boolean;
+  has_prev: boolean;
+}
+
 interface BarcodeListResponse {
-  data: Barcode[];
-  pagination: {
-    page: number;
-    total_pages: number;
-    total_items: number;
-    has_next: boolean;
-    has_prev: boolean;
+  data: {
+    data: ApiBarcode[];
+    pagination?: PaginationInfo;
   };
 }
 
@@ -90,11 +109,29 @@ export const BarcodeList: React.FC<BarcodeListProps> = ({ onViewDetails }) => {
         query: params
       });
 
-      const apiResponse = response.data as ApiResponse<BarcodeListResponse>;
-      if (apiResponse?.success && apiResponse.data) {
-        setBarcodes(apiResponse.data.data);
-        setPagination(apiResponse.data.pagination);
-      }
+      // Handle both wrapped and unwrapped API responses without relying on `success`
+      const root = response.data as unknown as { data?: { data?: ApiBarcode[]; pagination?: PaginationInfo } };
+      const items: ApiBarcode[] = root?.data?.data ?? [];
+      const mapped: Barcode[] = items.map((b) => ({
+        id: b.id,
+        barcode: b.barcode_value,
+        product_id: b.product_id,
+        product_name: b.product_name || '-',
+        batch_id: '',
+        batch_name: '',
+        status: (b.status as Barcode['status']) || 'generated',
+        created_at: b.created_at,
+        expires_at: b.expiry_date,
+      }));
+
+      setBarcodes(mapped);
+      const pg = root?.data?.pagination;
+      setPagination(pg ?? {
+        total_pages: 1,
+        total_items: mapped.length,
+        has_next: false,
+        has_prev: false,
+      });
     } catch (error: unknown) {
       const apiError = error as ApiError;
       const errorMessage = apiError?.response?.data?.message || apiError?.message || 'Failed to fetch barcodes';
@@ -170,13 +207,18 @@ export const BarcodeList: React.FC<BarcodeListProps> = ({ onViewDetails }) => {
         return 'destructive';
       case 'revoked':
         return 'outline';
+      case 'generated':
+        return 'default';
       default:
         return 'default';
     }
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    if (!dateString || dateString.startsWith('0001-01-01')) return '-';
+    const d = new Date(dateString);
+    if (isNaN(d.getTime())) return '-';
+    return d.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -227,6 +269,7 @@ export const BarcodeList: React.FC<BarcodeListProps> = ({ onViewDetails }) => {
                 <SelectItem value="used">Used</SelectItem>
                 <SelectItem value="expired">Expired</SelectItem>
                 <SelectItem value="revoked">Revoked</SelectItem>
+                <SelectItem value="generated">Generated</SelectItem>
               </SelectContent>
             </Select>
           </div>
