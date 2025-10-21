@@ -49,6 +49,14 @@ export class SecureTokenManager {
    */
   static async initialize(): Promise<void> {
     try {
+      const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
+      if (!isHttps) {
+        // Force fallback mode on HTTP to ensure Authorization header is used
+        this.isSecureModeEnabled = false;
+        console.warn('⚠️ Using bearer tokens (localStorage) on HTTP. Secure cookies disabled.');
+        return;
+      }
+
       // Check if backend supports secure token management
       const response = await fetch(`${this.API_BASE_URL}/api/v1/auth/secure-check`, {
         method: 'GET',

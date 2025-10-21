@@ -51,30 +51,19 @@ const sidebarItems = [
     href: "/admin/products",
     badge: null
   },
-  {
-    title: "Barcode Management",
-    icon: QrCode,
-    href: "/admin/barcodes",
-    badge: null
-  },
+  // {
+  //   title: "Barcode Management",
+  //   icon: QrCode,
+  //   href: "/admin/barcodes",
+  //   badge: null
+  // },
   {
     title: "Order",
     icon: ShoppingCart,
     href: "/admin/orders",
     badge: "12"
   },
-  {
-    title: "Tracking & Delivery",
-    icon: Route,
-    href: "/admin/tracking",
-    badge: "2"
-  },
-  {
-    title: "Marketplace Integration",
-    icon: Globe,
-    href: "/admin/marketplace",
-    badge: null
-  },
+  
   {
     title: "Warranty Program",
     icon: Shield,
@@ -92,6 +81,18 @@ const sidebarItems = [
     icon: Award,
     href: "/admin/loyalty",
     badge: "8"
+  },
+  {
+    title: "Tracking & Delivery",
+    icon: Route,
+    href: "/admin/tracking",
+    badge: "2"
+  },
+  {
+    title: "Marketplace Integration",
+    icon: Globe,
+    href: "/admin/marketplace",
+    badge: null
   },
   {
     title: "Warehouse",

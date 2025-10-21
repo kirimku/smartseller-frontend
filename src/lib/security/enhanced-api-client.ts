@@ -295,7 +295,7 @@ export class EnhancedApiClient {
         body: {
           email_or_phone: credentials.email_or_phone,
           password: credentials.password,
-          use_secure_tokens: true
+          use_secure_tokens: window.location.protocol === 'https:'
         },
         headers: await CSRFProtection.addCSRFHeader(),
       });
