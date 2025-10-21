@@ -49,6 +49,8 @@ if (import.meta.env.DEV) {
 
 // Layouts
 import PlatformLayout from './platform/components/PlatformLayout';
+import ApiTestComponent from './components/debug/ApiTestComponent';
+import QRTestComponent from './components/debug/QRTestComponent';
 
 // Loading component
 const LoadingSpinner: React.FC = () => (
@@ -99,7 +101,15 @@ const App: React.FC = () => {
                 {/* Public Routes */}
                 <Route path="/" element={<PlatformLanding />} />
                 <Route path="/login" element={<PlatformLogin />} />
-                
+
+                {/* Dev-only Debug Routes */}
+                {import.meta.env.DEV && (
+                  <Route path="/debug" element={<PlatformLayout />}>
+                    <Route index element={<ApiTestComponent />} />
+                    <Route path="qr" element={<QRTestComponent />} />
+                  </Route>
+                )}
+
                 {/* Dashboard - Protected Route (renders admin content) */}
                 <Route 
                   path="/dashboard" 

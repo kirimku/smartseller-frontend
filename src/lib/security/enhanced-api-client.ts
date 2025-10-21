@@ -99,6 +99,23 @@ export class EnhancedApiClient {
           config.headers.set(key, value);
         });
 
+        // Add tenant context header
+        try {
+          const envTenantId = (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_TENANT_ID
+            || (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_TENANT_SLUG;
+          const storageTenantId = typeof window !== 'undefined'
+            ? (localStorage.getItem('current-tenant') ||
+               localStorage.getItem('tenant_id') ||
+               localStorage.getItem('smartseller_tenant_id'))
+            : null;
+          const tenantId = storageTenantId || envTenantId;
+          if (tenantId) {
+            config.headers.set('X-Tenant-ID', tenantId);
+          }
+        } catch (_) {
+          // no-op if tenant cannot be resolved
+        }
+
         // Ensure credentials are included for secure cookies
         config.withCredentials = true;
 
