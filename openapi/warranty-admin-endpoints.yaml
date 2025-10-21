@@ -1,6 +1,6 @@
 paths:
   # Warranty Barcode Management
-  /api/v1/admin/warranties/barcodes:
+  /api/v1/admin/warranty/barcodes:
     get:
       tags:
         - Admin Warranty Management
@@ -141,7 +141,7 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
-  /api/v1/admin/warranties/barcodes/{id}:
+  /api/v1/admin/warranty/barcodes/{id}:
     get:
       tags:
         - Admin Warranty Management
@@ -268,8 +268,369 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  /api/v1/admin/warranty/barcodes/{id}/qr:
+    get:
+      tags:
+        - Admin Warranty Management
+      summary: Generate QR code for warranty barcode
+      description: Generate QR code image for a warranty barcode on-demand with customizable options
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Warranty barcode ID
+          schema:
+            type: string
+            format: uuid
+        - name: size
+          in: query
+          description: QR code size in pixels
+          schema:
+            type: integer
+            minimum: 64
+            maximum: 1024
+            default: 256
+        - name: error_level
+          in: query
+          description: Error correction level
+          schema:
+            type: string
+            enum: [L, M, Q, H]
+            default: M
+        - name: format
+          in: query
+          description: Response format
+          schema:
+            type: string
+            enum: [base64, png]
+            default: base64
+      responses:
+        '200':
+          description: QR code generated successfully
+          headers:
+            Cache-Control:
+              description: Cache control header
+              schema:
+                type: string
+                example: "public, max-age=3600"
+            ETag:
+              description: Entity tag for caching
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "QR code generated successfully"
+                  data:
+                    type: object
+                    properties:
+                      qr_code:
+                        type: string
+                        description: Base64 encoded QR code image
+                        example: "iVBORw0KGgoAAAANSUhEUgAAAQAAAAEA..."
+                      size:
+                        type: integer
+                        example: 256
+                      error_level:
+                        type: string
+                        example: "M"
+                      format:
+                        type: string
+                        example: "base64"
+            image/png:
+              schema:
+                type: string
+                format: binary
+                description: PNG image of the QR code
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Invalid size parameter. Must be between 64 and 1024"
+                  error:
+                    type: string
+                    example: "INVALID_PARAMETER"
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/admin/warranty/barcodes/{id}/approve:
+    post:
+      tags:
+        - Admin Warranty Management
+      summary: Approve warranty for claims
+      description: Approve an activated warranty barcode to allow customers to submit claims
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Warranty barcode ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WarrantyApprovalRequest'
+      responses:
+        '200':
+          description: Warranty approved for claims successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Warranty approved for claims successfully"
+                  data:
+                    type: object
+                    properties:
+                      barcode_id:
+                        type: string
+                        format: uuid
+                        example: "123e4567-e89b-12d3-a456-426614174000"
+                      approved_at:
+                        type: string
+                        format: date-time
+                        example: "2023-12-05T10:30:00Z"
+                      approved_by:
+                        type: string
+                        example: "admin_user_123"
+                      approval_reason:
+                        type: string
+                        example: "Product registration verified and warranty period confirmed"
+        '400':
+          description: Bad request - Invalid barcode state or parameters
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Cannot approve warranty: barcode is not in activated state"
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/admin/warranty/barcodes/{id}/approve-registration:
+    post:
+      tags:
+        - Admin Warranty Management
+      summary: Approve warranty registration
+      description: Approve a warranty barcode registration, transitioning it from waiting_approval to activated status
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Warranty barcode ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                approval_reason:
+                  type: string
+                  description: Reason for approving the warranty registration
+                  example: "Customer registration verified and product authenticity confirmed"
+              required:
+                - approval_reason
+      responses:
+        '200':
+          description: Warranty registration approved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Warranty registration approved successfully"
+                  data:
+                    type: object
+                    properties:
+                      barcode_id:
+                        type: string
+                        format: uuid
+                        example: "123e4567-e89b-12d3-a456-426614174000"
+                      status:
+                        type: string
+                        example: "activated"
+                      activated_at:
+                        type: string
+                        format: date-time
+                        example: "2023-12-05T10:30:00Z"
+                      approved_by:
+                        type: string
+                        example: "admin_user_123"
+                      approval_reason:
+                        type: string
+                        example: "Customer registration verified and product authenticity confirmed"
+                      expiry_date:
+                        type: string
+                        format: date-time
+                        example: "2024-12-05T10:30:00Z"
+        '400':
+          description: Bad request - Invalid barcode state or parameters
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Cannot approve warranty: barcode is not in waiting_approval state"
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/admin/warranty/barcodes/pending-approval:
+    get:
+      tags:
+        - Admin Warranty Management
+      summary: List warranties pending approval
+      description: Retrieve a paginated list of activated warranty barcodes that are pending admin approval for claims
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          description: Page number (1-based)
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: page_size
+          in: query
+          description: Number of items per page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: product_id
+          in: query
+          description: Filter by product ID
+          schema:
+            type: string
+            format: uuid
+        - name: search
+          in: query
+          description: Search in barcode number, customer email, or product name
+          schema:
+            type: string
+        - name: activated_from
+          in: query
+          description: Filter by activation date (from)
+          schema:
+            type: string
+            format: date-time
+        - name: activated_to
+          in: query
+          description: Filter by activation date (to)
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Pending approval warranties retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Pending approval warranties retrieved successfully"
+                  data:
+                    type: object
+                    properties:
+                      barcodes:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/WarrantyBarcodeDTO'
+                      pagination:
+                        $ref: '#/components/schemas/PaginationMeta'
+                      summary:
+                        type: object
+                        properties:
+                          total_pending:
+                            type: integer
+                            example: 45
+                          oldest_pending_days:
+                            type: integer
+                            example: 7
+                            description: Days since the oldest pending warranty was activated
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
   # Warranty Claims Management
-  /api/v1/admin/warranties/claims:
+  /api/v1/admin/warranty/claims:
     get:
       tags:
         - Admin Warranty Claims
@@ -363,7 +724,7 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
-  /api/v1/admin/warranties/claims/{id}:
+  /api/v1/admin/warranty/claims/{id}:
     get:
       tags:
         - Admin Warranty Claims
@@ -452,7 +813,7 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
-  /api/v1/admin/warranties/claims/{id}/assign:
+  /api/v1/admin/warranty/claims/{id}/assign:
     post:
       tags:
         - Admin Warranty Claims
@@ -502,7 +863,7 @@ paths:
           $ref: '#/components/responses/InternalServerError'
 
   # Batch Operations
-  /api/v1/admin/warranties/batches:
+  /api/v1/admin/warranty/batches:
     get:
       tags:
         - Admin Batch Operations
@@ -564,7 +925,7 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
-  /api/v1/admin/warranties/batches/{id}:
+  /api/v1/admin/warranty/batches/{id}:
     get:
       tags:
         - Admin Batch Operations
@@ -606,7 +967,7 @@ paths:
           $ref: '#/components/responses/InternalServerError'
 
   # Analytics and Reports
-  /api/v1/admin/warranties/analytics/dashboard:
+  /api/v1/admin/warranty/analytics/dashboard:
     get:
       tags:
         - Admin Analytics
@@ -653,7 +1014,7 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
-  /api/v1/admin/warranties/reports/export:
+  /api/v1/admin/warranty/reports/export:
     post:
       tags:
         - Admin Analytics
@@ -702,6 +1063,292 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # Additional Warranty Barcode Endpoints
+  /api/v1/admin/warranty/barcodes/{id}/activate:
+    post:
+      tags:
+        - Admin Warranty Management
+      summary: Activate warranty barcode
+      description: Activate a specific warranty barcode
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Warranty barcode ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                customer_id:
+                  type: string
+                  format: uuid
+                  description: "Customer ID activating the warranty"
+                activation_location:
+                  type: string
+                  description: "Location where warranty is activated"
+                  example: "Jakarta, Indonesia"
+              required:
+                - customer_id
+      responses:
+        '200':
+          description: Warranty barcode activated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Warranty barcode activated successfully"
+                  data:
+                    $ref: '#/components/schemas/WarrantyBarcodeDTO'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/admin/warranty/barcodes/bulk-activate:
+    post:
+      tags:
+        - Admin Warranty Management
+      summary: Bulk activate warranty barcodes
+      description: Activate multiple warranty barcodes at once
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                barcode_ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                  description: "Array of barcode IDs to activate"
+                customer_id:
+                  type: string
+                  format: uuid
+                  description: "Customer ID activating the warranties"
+                activation_location:
+                  type: string
+                  description: "Location where warranties are activated"
+                  example: "Jakarta, Indonesia"
+              required:
+                - barcode_ids
+                - customer_id
+      responses:
+        '200':
+          description: Warranty barcodes activated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Warranty barcodes activated successfully"
+                  data:
+                    type: object
+                    properties:
+                      activated_count:
+                        type: integer
+                        example: 5
+                      failed_count:
+                        type: integer
+                        example: 0
+                      activated_barcodes:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/WarrantyBarcodeDTO'
+                      failed_barcodes:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            barcode_id:
+                              type: string
+                              format: uuid
+                            error:
+                              type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/admin/warranty/barcodes/stats:
+    get:
+      tags:
+        - Admin Warranty Management
+      summary: Get warranty barcode statistics
+      description: Retrieve comprehensive statistics about warranty barcodes
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: storefront_id
+          in: query
+          description: Filter statistics by storefront ID
+          schema:
+            type: string
+            format: uuid
+        - name: product_id
+          in: query
+          description: Filter statistics by product ID
+          schema:
+            type: string
+            format: uuid
+        - name: date_from
+          in: query
+          description: Start date for statistics
+          schema:
+            type: string
+            format: date-time
+        - name: date_to
+          in: query
+          description: End date for statistics
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Statistics retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Statistics retrieved successfully"
+                  data:
+                    type: object
+                    properties:
+                      total_barcodes:
+                        type: integer
+                        example: 1000
+                      generated_count:
+                        type: integer
+                        example: 800
+                      activated_count:
+                        type: integer
+                        example: 150
+                      expired_count:
+                        type: integer
+                        example: 30
+                      revoked_count:
+                        type: integer
+                        example: 20
+                      activation_rate:
+                        type: number
+                        format: float
+                        example: 18.75
+                      expiry_rate:
+                        type: number
+                        format: float
+                        example: 3.75
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/admin/warranty/barcodes/validate/{barcode_value}:
+    get:
+      tags:
+        - Admin Warranty Management
+      summary: Validate warranty barcode
+      description: Validate a warranty barcode by its value
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: barcode_value
+          in: path
+          required: true
+          description: Barcode value to validate
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Barcode validation result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Barcode validation completed"
+                  data:
+                    type: object
+                    properties:
+                      is_valid:
+                        type: boolean
+                        example: true
+                      barcode_value:
+                        type: string
+                        example: "WB-2023-ABC123DEF456"
+                      status:
+                        type: string
+                        example: "active"
+                      is_expired:
+                        type: boolean
+                        example: false
+                      expiry_date:
+                        type: string
+                        format: date-time
+                        example: "2025-12-01T10:00:00Z"
+                      product_name:
+                        type: string
+                        example: "Samsung Galaxy S23"
+                      storefront_name:
+                        type: string
+                        example: "TechStore Indonesia"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalServerError'
 
