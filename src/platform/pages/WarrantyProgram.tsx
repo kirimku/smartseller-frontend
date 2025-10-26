@@ -46,6 +46,7 @@ import {
   XCircle,
   Clock,
   AlertTriangle,
+  AlertCircle,
   Plus,
   Edit,
   Trash2,
@@ -79,6 +80,8 @@ import {
 import { BarcodeGenerator } from "../../components/barcode/BarcodeGenerator";
 import { BarcodeList } from "../../components/barcode/BarcodeList";
 import { WarrantyRegister } from "../../components/barcode/WarrantyRegister";
+import { enhancedApiClient } from "../../lib/security/enhanced-api-client";
+import { SecureTokenManager } from "../../lib/security/secure-token-manager";
 
 type WarrantyStatus = "active" | "expired" | "claimed" | "processing" | "repaired" | "replaced" | "denied";
 type ClaimStatus = "pending" | "validated" | "in_repair" | "repaired" | "shipped" | "completed" | "rejected";
@@ -130,6 +133,15 @@ type WarrantyClaim = {
   shippingTrackingNumber?: string;
   photos?: string[];
   attachments?: string[];
+};
+
+type WarrantyClaimsApiResponse = {
+  data?: WarrantyClaim[];
+  items?: WarrantyClaim[];
+  page?: number;
+  page_size?: number;
+  total?: number;
+  total_pages?: number;
 };
 
 // Mock data for demonstration
@@ -218,6 +230,18 @@ export default function WarrantyProgram() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   
+  // Claims API state
+  const [claimsLoading, setClaimsLoading] = useState(false);
+  const [claimsError, setClaimsError] = useState<string | null>(null);
+  const [claimsPage, setClaimsPage] = useState(1);
+  const [claimsMeta, setClaimsMeta] = useState({
+    page: 1,
+    page_size: 10,
+    total: 0,
+    total_pages: 0
+  });
+  const [validatingClaims, setValidatingClaims] = useState(new Set<string>());
+  
   // Dialog states
   const [isClaimDialogOpen, setIsClaimDialogOpen] = useState(false);
   const [selectedClaim, setSelectedClaim] = useState<WarrantyClaim | null>(null);
@@ -230,6 +254,145 @@ export default function WarrantyProgram() {
     estimatedDelivery: "",
     notes: ""
   });
+
+  // Test function for debugging API calls
+  const testApiCall = async () => {
+    console.log('🧪 Testing API call manually...');
+    
+    // Check authentication status first
+    console.log('🔍 Checking authentication status...');
+    const authStatus = await enhancedApiClient.getAuthStatus();
+    console.log('🔐 Auth Status:', authStatus);
+    
+    const isAuth = await enhancedApiClient.isAuthenticated();
+    console.log('🔐 Is Authenticated:', isAuth);
+    
+    // Check token manager status
+    const accessToken = SecureTokenManager.getAccessToken();
+    const tokenManagerStatus = {
+      isSecureMode: SecureTokenManager.isSecureMode(),
+      isAuthenticated: SecureTokenManager.isAuthenticated(),
+      hasAccessToken: !!accessToken,
+      accessTokenLength: accessToken?.length || 0,
+      isTokenExpired: SecureTokenManager.isTokenExpired()
+    };
+    console.log('🔑 Token Manager Status:', tokenManagerStatus);
+    
+    alert(`Auth Status: ${JSON.stringify(authStatus, null, 2)}\n\nToken Manager: ${JSON.stringify(tokenManagerStatus, null, 2)}`);
+    
+    // Test 1: Using enhancedApiClient (like /users/me)
+    console.log('🔍 Test 1: Using enhancedApiClient...');
+    try {
+      const result = await enhancedApiClient.getClient().get({
+        url: '/api/v1/admin/warranty/claims?page=1&page_size=10'
+      });
+      console.log('✅ Enhanced API client call successful:', result);
+      alert('Enhanced API call successful! Check console for details.');
+    } catch (error) {
+      console.error('❌ Enhanced API client call failed:', error);
+      alert(`Enhanced API call failed: ${error}`);
+    }
+    
+    // Test 2: Using our updated fetchWarrantyClaims function
+    console.log('🔍 Test 2: Using updated fetchWarrantyClaims...');
+    try {
+      const result = await fetchWarrantyClaims(1, '', 'all');
+      console.log('✅ fetchWarrantyClaims call successful:', result);
+      alert('fetchWarrantyClaims successful! Check console for details.');
+    } catch (error) {
+      console.error('❌ fetchWarrantyClaims call failed:', error);
+      alert(`fetchWarrantyClaims failed: ${error}`);
+    }
+    
+    // Test 3: Compare with working /users/me endpoint
+    console.log('🔍 Test 3: Testing /users/me for comparison...');
+    try {
+      const result = await enhancedApiClient.getClient().get({
+        url: '/api/v1/users/me'
+      });
+      console.log('✅ /users/me call successful:', result);
+      alert('/users/me call successful! Check console for details.');
+    } catch (error) {
+      console.error('❌ /users/me call failed:', error);
+      alert(`/users/me call failed: ${error}`);
+    }
+  };
+
+  // useEffect hooks for claims API
+  useEffect(() => {
+    if (activeTab === 'claims') {
+      console.log('Claims tab activated, loading claims...');
+      loadClaims();
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab === 'claims') {
+      console.log('Search or filter changed, reloading claims...', { searchTerm, statusFilter });
+      setClaimsPage(1); // Reset to first page when search/filter changes
+      loadClaims();
+    }
+  }, [searchTerm, statusFilter]);
+
+  useEffect(() => {
+    if (activeTab === 'claims') {
+      console.log('Page changed, loading claims...', { claimsPage });
+      loadClaims();
+    }
+  }, [claimsPage]);
+
+  // API functions
+  const fetchWarrantyClaims = async (page = 1, search = '', status = 'all'): Promise<WarrantyClaimsApiResponse> => {
+    try {
+      console.log('Fetching warranty claims...', { page, search, status });
+      
+      const params = new URLSearchParams({
+        page: page.toString(),
+        page_size: '10'
+      });
+      
+      if (search.trim()) {
+        params.append('search', search.trim());
+      }
+      
+      if (status !== 'all') {
+        params.append('status', status);
+      }
+      
+      const response = await enhancedApiClient.getClient().get({
+        url: `/api/v1/admin/warranty/claims?${params}`
+      });
+      console.log('API Response:', response);
+      
+      return response.data as WarrantyClaimsApiResponse;
+    } catch (error) {
+      console.error('Error fetching warranty claims:', error);
+      throw error;
+    }
+  };
+
+  const loadClaims = async () => {
+    setClaimsLoading(true);
+    setClaimsError(null);
+    
+    try {
+      const data = await fetchWarrantyClaims(claimsPage, searchTerm, statusFilter);
+      
+      // Adjust these based on your actual API response structure
+      setWarrantyClaims(data.data || data.items || []);
+      setClaimsMeta({
+        page: data.page || claimsPage,
+        page_size: data.page_size || 10,
+        total: data.total || 0,
+        total_pages: data.total_pages || Math.ceil((data.total || 0) / 10)
+      });
+    } catch (error) {
+      setClaimsError(error instanceof Error ? error.message : 'Failed to load warranty claims');
+      setWarrantyClaims([]);
+    } finally {
+      setClaimsLoading(false);
+    }
+  };
 
   // Helper functions
   const getStatusBadge = (status: ClaimStatus) => {
@@ -251,19 +414,37 @@ export default function WarrantyProgram() {
     return new Date(dateString).toLocaleDateString('id-ID');
   };
 
-  const validateClaim = (claimId: string, isValid: boolean, rejectionReason?: string) => {
-    setWarrantyClaims(prev => prev.map(claim => 
-      claim.id === claimId 
-        ? { 
-            ...claim, 
-            status: isValid ? "validated" : "rejected",
-            validatedBy: "admin001",
-            validatedAt: new Date().toISOString(),
-            rejectionReason: rejectionReason
-          }
-        : claim
-    ));
-    setIsClaimDialogOpen(false);
+  const validateClaim = async (claimId: string, isValid: boolean, rejectionReason?: string) => {
+    setValidatingClaims(prev => new Set(prev).add(claimId));
+    
+    try {
+      const response = await enhancedApiClient.getClient().post({
+        url: `/api/v1/admin/warranty/claims/${claimId}/validate`,
+        data: {
+          is_valid: isValid,
+          reason: rejectionReason
+        }
+      });
+      
+      // Reload claims after validation
+      await loadClaims();
+      
+      // Close dialog if it's open
+      setIsClaimDialogOpen(false);
+      
+      // You can add toast notification here if available
+      console.log(`Claim ${isValid ? 'approved' : 'rejected'} successfully`);
+    } catch (error) {
+      console.error('Error validating claim:', error);
+      // You can add toast notification here if available
+      console.error(error instanceof Error ? error.message : 'Failed to validate claim');
+    } finally {
+      setValidatingClaims(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(claimId);
+        return newSet;
+      });
+    }
   };
 
   const updateClaimStatus = (claimId: string, newStatus: ClaimStatus) => {
@@ -316,6 +497,10 @@ export default function WarrantyProgram() {
           <p className="text-gray-600 mt-1">Manage warranty barcodes, claims, and customer support</p>
         </div>
         <div className="flex gap-3">
+          <Button variant="outline" onClick={testApiCall} className="flex items-center gap-2 bg-yellow-50 border-yellow-300 text-yellow-700 hover:bg-yellow-100">
+            <Settings className="h-4 w-4" />
+            Test API
+          </Button>
           <Button variant="outline" className="flex items-center gap-2">
             <Download className="h-4 w-4" />
             Export Data
@@ -440,6 +625,16 @@ export default function WarrantyProgram() {
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold">Warranty Claims Management</h2>
               <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => loadClaims()}
+                  disabled={claimsLoading}
+                  className="flex items-center gap-2"
+                >
+                  <RefreshCw className={`h-4 w-4 ${claimsLoading ? 'animate-spin' : ''}`} />
+                  Refresh
+                </Button>
                 <div className="relative">
                   <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
@@ -447,9 +642,10 @@ export default function WarrantyProgram() {
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10 w-64"
+                    disabled={claimsLoading}
                   />
                 </div>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <Select value={statusFilter} onValueChange={setStatusFilter} disabled={claimsLoading}>
                   <SelectTrigger className="w-40">
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
@@ -467,91 +663,190 @@ export default function WarrantyProgram() {
               </div>
             </div>
 
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Claim Number</TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Product</TableHead>
-                    <TableHead>Issue</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Claim Date</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredClaims.map((claim) => (
-                    <TableRow key={claim.id}>
-                      <TableCell>
-                        <div className="font-medium">{claim.claimNumber}</div>
-                        <div className="text-sm text-gray-500">{claim.barcodeId}</div>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{claim.customerName}</div>
-                          <div className="text-sm text-gray-500">{claim.customerEmail}</div>
-                          <div className="text-sm text-gray-500">{claim.customerPhone}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{claim.productName}</div>
-                          <div className="text-sm text-gray-500">
-                            Purchased: {formatDate(claim.purchaseDate)}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{claim.issueCategory}</div>
-                          <div className="text-sm text-gray-500 max-w-xs truncate">
-                            {claim.issueDescription}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>{getStatusBadge(claim.status)}</TableCell>
-                      <TableCell>{formatDate(claim.claimDate)}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedClaim(claim);
-                              setIsClaimDialogOpen(true);
-                            }}
-                            className="h-8 w-8 p-0"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          {claim.status === "pending" && (
-                            <>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => validateClaim(claim.id, true)}
-                                className="h-8 w-8 p-0 text-green-600 hover:text-green-700"
-                              >
-                                <Check className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => validateClaim(claim.id, false, "Invalid warranty claim")}
-                                className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+            {/* Error Alert */}
+            {claimsError && (
+              <Alert variant="destructive" className="mb-6">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error loading claims</AlertTitle>
+                <AlertDescription>
+                  {claimsError}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => loadClaims()}
+                    className="ml-2"
+                  >
+                    Try Again
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Loading State */}
+            {claimsLoading && !claimsError && (
+              <div className="flex items-center justify-center py-12">
+                <div className="flex items-center gap-2">
+                  <RefreshCw className="h-5 w-5 animate-spin" />
+                  <span>Loading warranty claims...</span>
+                </div>
+              </div>
+            )}
+
+            {/* Claims Table */}
+            {!claimsLoading && !claimsError && (
+              <>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Claim Number</TableHead>
+                        <TableHead>Customer</TableHead>
+                        <TableHead>Product</TableHead>
+                        <TableHead>Issue</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Claim Date</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {warrantyClaims.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={7} className="text-center py-12">
+                            <div className="flex flex-col items-center gap-2">
+                              <AlertCircle className="h-8 w-8 text-gray-400" />
+                              <span className="text-gray-500">No warranty claims found</span>
+                              {(searchTerm || statusFilter !== 'all') && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    setSearchTerm('');
+                                    setStatusFilter('all');
+                                  }}
+                                >
+                                  Clear filters
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        warrantyClaims.map((claim) => (
+                          <TableRow key={claim.id}>
+                            <TableCell>
+                              <div className="font-medium">{claim.claimNumber}</div>
+                              <div className="text-sm text-gray-500">{claim.barcodeId}</div>
+                            </TableCell>
+                            <TableCell>
+                              <div>
+                                <div className="font-medium">{claim.customerName}</div>
+                                <div className="text-sm text-gray-500">{claim.customerEmail}</div>
+                                <div className="text-sm text-gray-500">{claim.customerPhone}</div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div>
+                                <div className="font-medium">{claim.productName}</div>
+                                <div className="text-sm text-gray-500">
+                                  Purchased: {formatDate(claim.purchaseDate)}
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div>
+                                <div className="font-medium">{claim.issueCategory}</div>
+                                <div className="text-sm text-gray-500 max-w-xs truncate">
+                                  {claim.issueDescription}
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>{getStatusBadge(claim.status)}</TableCell>
+                            <TableCell>{formatDate(claim.claimDate)}</TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    setSelectedClaim(claim);
+                                    setIsClaimDialogOpen(true);
+                                  }}
+                                  className="h-8 w-8 p-0"
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                {claim.status === "pending" && (
+                                  <>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => validateClaim(claim.id, true)}
+                                      disabled={validatingClaims.has(claim.id)}
+                                      className="h-8 w-8 p-0 text-green-600 hover:text-green-700"
+                                    >
+                                      {validatingClaims.has(claim.id) ? (
+                                        <RefreshCw className="h-4 w-4 animate-spin" />
+                                      ) : (
+                                        <Check className="h-4 w-4" />
+                                      )}
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => validateClaim(claim.id, false, "Invalid warranty claim")}
+                                      disabled={validatingClaims.has(claim.id)}
+                                      className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                                    >
+                                      {validatingClaims.has(claim.id) ? (
+                                        <RefreshCw className="h-4 w-4 animate-spin" />
+                                      ) : (
+                                        <X className="h-4 w-4" />
+                                      )}
+                                    </Button>
+                                  </>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* Pagination */}
+                {claimsMeta.total > 0 && (
+                  <div className="flex items-center justify-between mt-6">
+                    <div className="text-sm text-gray-500">
+                      Showing {((claimsMeta.page - 1) * claimsMeta.page_size) + 1} to{' '}
+                      {Math.min(claimsMeta.page * claimsMeta.page_size, claimsMeta.total)} of{' '}
+                      {claimsMeta.total} claims
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setClaimsPage(prev => Math.max(1, prev - 1))}
+                        disabled={claimsPage <= 1 || claimsLoading}
+                      >
+                        Previous
+                      </Button>
+                      <span className="text-sm">
+                        Page {claimsMeta.page} of {claimsMeta.total_pages}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setClaimsPage(prev => Math.min(claimsMeta.total_pages, prev + 1))}
+                        disabled={claimsPage >= claimsMeta.total_pages || claimsLoading}
+                      >
+                        Next
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
           </Card>
         </TabsContent>
       </Tabs>

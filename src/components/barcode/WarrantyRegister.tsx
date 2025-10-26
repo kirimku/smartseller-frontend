@@ -21,6 +21,7 @@ interface ApiPendingRegistration {
   customer_phone?: string;
   registration_date?: string;
   status?: string; // expecting "waiting_approval"
+  proof_of_purchase_url?: string;
 }
 
 interface PendingRegistrationItem {
@@ -33,6 +34,7 @@ interface PendingRegistrationItem {
   customer_phone?: string;
   registration_date?: string;
   status: string;
+  proof_of_purchase_url?: string;
 }
 
 interface PaginationInfo {
@@ -100,6 +102,7 @@ export const WarrantyRegister: React.FC = () => {
         customer_phone: i.customer_phone,
         registration_date: i.registration_date,
         status: i.status || 'waiting_approval',
+        proof_of_purchase_url: i.proof_of_purchase_url,
       }));
 
       setItems(mapped);
@@ -240,8 +243,7 @@ export const WarrantyRegister: React.FC = () => {
               <TableRow>
                 <TableHead>Barcode</TableHead>
                 <TableHead>Product</TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead>Registered</TableHead>
+                <TableHead>Proof of Purchase</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -257,13 +259,19 @@ export const WarrantyRegister: React.FC = () => {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="flex flex-col">
-                      <span>{item.customer_name || '-'}</span>
-                      <span className="text-xs text-muted-foreground">{item.customer_email || ''}</span>
-                      <span className="text-xs text-muted-foreground">{item.customer_phone || ''}</span>
-                    </div>
+                    {item.proof_of_purchase_url ? (
+                      <a 
+                        href={item.proof_of_purchase_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800 underline text-sm break-all"
+                      >
+                        View Receipt
+                      </a>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
                   </TableCell>
-                  <TableCell>{item.registration_date ? new Date(item.registration_date).toLocaleString() : '-'}</TableCell>
                   <TableCell>
                     <Badge variant="secondary">{item.status}</Badge>
                   </TableCell>
@@ -284,7 +292,7 @@ export const WarrantyRegister: React.FC = () => {
                       </Button>
                       <Button
                         size="sm"
-                        variant="outline"
+                        variant="destructive"
                         onClick={() => rejectRegistration(item.id)}
                         disabled={actionLoading === item.id}
                         className="flex items-center gap-1"
@@ -303,7 +311,7 @@ export const WarrantyRegister: React.FC = () => {
 
               {items.length === 0 && !loading && (
                 <TableRow>
-                  <TableCell colSpan={6}>
+                  <TableCell colSpan={5}>
                     <div className="text-center text-sm text-muted-foreground py-10">No pending registrations found</div>
                   </TableCell>
                 </TableRow>
