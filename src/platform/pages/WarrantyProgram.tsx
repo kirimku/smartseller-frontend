@@ -82,6 +82,8 @@ import { BarcodeList } from "../../components/barcode/BarcodeList";
 import { WarrantyRegister } from "../../components/barcode/WarrantyRegister";
 import { enhancedApiClient } from "../../lib/security/enhanced-api-client";
 import { SecureTokenManager } from "../../lib/security/secure-token-manager";
+import { productService } from "../../services/product";
+import type { ProductWithVariants } from "../../shared/types/product-management";
 
 type WarrantyStatus = "active" | "expired" | "claimed" | "processing" | "repaired" | "replaced" | "denied";
 type ClaimStatus = "pending" | "validated" | "in_repair" | "repaired" | "shipped" | "completed" | "rejected";
@@ -246,6 +248,10 @@ export default function WarrantyProgram() {
   const [isClaimDialogOpen, setIsClaimDialogOpen] = useState(false);
   const [selectedClaim, setSelectedClaim] = useState<WarrantyClaim | null>(null);
   const [isShippingDialogOpen, setIsShippingDialogOpen] = useState(false);
+  // Product details state for dialog
+  const [productDetails, setProductDetails] = useState<ProductWithVariants | null>(null);
+  const [productLoading, setProductLoading] = useState(false);
+  const [productError, setProductError] = useState<string | null>(null);
   
   // Form states
   const [shippingForm, setShippingForm] = useState({
@@ -341,12 +347,76 @@ export default function WarrantyProgram() {
     }
   }, [claimsPage]);
 
+  // Add types for barcode lookup response
+  type ApiResponse<T> = { success?: boolean; data?: T; message?: string };
+  type BarcodeDetails = { product_id?: string; product_name?: string; product_sku?: string };
+
+  // Fetch product details when claim dialog opens
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchProductDetailsForClaim = async () => {
+      if (!isClaimDialogOpen || !selectedClaim) return;
+      setProductLoading(true);
+      setProductError(null);
+      setProductDetails(null);
+
+      try {
+        let pid = selectedClaim.productId?.trim();
+        if (!pid) {
+          try {
+            const response = await enhancedApiClient.getClient().get({
+              url: `/api/v1/admin/warranty/barcodes/${selectedClaim.barcodeId}`
+            });
+            const root = response.data as ApiResponse<BarcodeDetails>;
+            pid = root?.data?.product_id || '';
+          } catch (e) {
+            // Keep going; we'll surface a generic error below if pid remains empty
+          }
+        }
+
+        if (!pid) {
+          throw new Error('Product ID not available for this claim');
+        }
+
+        const product = await productService.getProductWithDetails(pid, ['variants', 'category', 'images']);
+        if (!cancelled) {
+          setProductDetails(product);
+        }
+      } catch (err) {
+        const e = err as { message?: string; response?: { data?: { message?: string } } };
+        const msg = e?.response?.data?.message || e?.message || 'Failed to load product details';
+        if (!cancelled) {
+          setProductError(msg);
+        }
+      } finally {
+        if (!cancelled) {
+          setProductLoading(false);
+        }
+      }
+    };
+
+    fetchProductDetailsForClaim();
+
+    return () => { cancelled = true; };
+  }, [isClaimDialogOpen, selectedClaim]);
+
+  // Reset product details when dialog closes
+  useEffect(() => {
+    if (!isClaimDialogOpen) {
+      setProductDetails(null);
+      setProductError(null);
+      setProductLoading(false);
+    }
+  }, [isClaimDialogOpen]);
+
   // API functions
   // Normalize admin claims list response into local types
   type AdminWarrantyClaimDTO = {
     id: string;
     claim_number: string;
     barcode_id: string;
+    product_id?: string;
     product_name?: string;
     customer_name?: string;
     customer_email?: string;
@@ -409,7 +479,7 @@ export default function WarrantyProgram() {
       customerName: dto.customer_name || '',
       customerEmail: dto.customer_email || '',
       customerPhone: dto.customer_phone || '',
-      productId: '', // not provided in DTO
+      productId: dto.product_id || '',
       productName: dto.product_name || '',
       issueDescription: dto.issue_description || '',
       issueCategory: dto.issue_category || '',
@@ -1009,7 +1079,7 @@ export default function WarrantyProgram() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <div>
                     <Label className="text-sm text-gray-600">Product:</Label>
-                    <div className="font-medium">{selectedClaim.productName}</div>
+                    <div className="font-medium">{productDetails?.name ?? selectedClaim.productName}</div>
                   </div>
                   <div>
                     <Label className="text-sm text-gray-600">Purchase Date:</Label>
@@ -1021,6 +1091,51 @@ export default function WarrantyProgram() {
                   <div className="mt-1 p-3 bg-gray-50 rounded-lg text-sm">
                     {selectedClaim.issueDescription}
                   </div>
+                </div>
+                {/* Product Details from API */}
+                <div className="mt-4">
+                  {productLoading && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                      Loading product details...
+                    </div>
+                  )}
+                  {!productLoading && productError && (
+                    <Alert variant="destructive">
+                      <AlertDescription>{productError}</AlertDescription>
+                    </Alert>
+                  )}
+                  {!productLoading && !productError && productDetails && (
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <div>
+                          <Label className="text-sm text-gray-600">Product ID:</Label>
+                          <div className="font-mono text-xs">{productDetails.id}</div>
+                        </div>
+                        <div>
+                          <Label className="text-sm text-gray-600">SKU:</Label>
+                          <div className="font-medium">{productDetails.sku}</div>
+                        </div>
+                      </div>
+                      {Array.isArray(productDetails.variants) && productDetails.variants.length > 0 && (
+                        <div>
+                          <Label className="text-sm text-gray-600">Variants:</Label>
+                          <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2">
+                            {productDetails.variants.map((v) => (
+                              <div key={v.id} className="p-2 bg-gray-50 rounded">
+                                <div className="text-sm font-medium">{v.sku}</div>
+                                {Object.keys(v.variant_options ?? {}).length > 0 && (
+                                  <div className="text-xs text-gray-600">
+                                    {Object.entries(v.variant_options ?? {}).map(([name, value]) => `${name}: ${value}`).join(', ')}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </Card>
 
