@@ -32,7 +32,7 @@ app.get('/health', (req, res) => {
 // API status endpoint
 app.get('/api/status', (req, res) => {
   // Use host.docker.internal when running in Docker, localhost otherwise
-  const backendUrl = process.env.DOCKER_ENV ? 'http://host.docker.internal:8090' : 'http://localhost:8090';
+  const backendUrl = process.env.DOCKER_ENV ? 'http://host.docker.internal:8090' : 'https://smartseller-api.preproduction.kirimku.com';
   res.json({
     status: 'OK',
     backend: backendUrl,
@@ -43,8 +43,8 @@ app.get('/api/status', (req, res) => {
 // Runtime configuration endpoint
 app.get('/config.js', (req, res) => {
   const config = {
-    VITE_BACKEND_HOST: process.env.VITE_BACKEND_HOST || process.env.VITE_API_BASE_URL || 'http://localhost:8090',
-    VITE_API_BASE_URL: process.env.VITE_API_BASE_URL || process.env.VITE_BACKEND_HOST || 'http://localhost:8090',
+    VITE_BACKEND_HOST: process.env.VITE_BACKEND_HOST || process.env.VITE_API_BASE_URL || 'https://smartseller-api.preproduction.kirimku.com',
+    VITE_API_BASE_URL: process.env.VITE_API_BASE_URL || process.env.VITE_BACKEND_HOST || 'https://smartseller-api.preproduction.kirimku.com',
     VITE_DOMAIN: process.env.VITE_DOMAIN || 'http://localhost:4173',
     VITE_TENANT_SLUG: process.env.VITE_TENANT_SLUG || 'rexus-gaming',
     VITE_TENANT_ID: process.env.VITE_TENANT_ID || 'rexus-001',
@@ -69,11 +69,9 @@ app.use(
         imgSrc: ["'self'", "data:", "https:"],
         connectSrc: [
           "'self'", 
-          "http://localhost:8090",
-          "https://localhost:8090",
+          "https://smartseller-api.preproduction.kirimku.com",
           "http://host.docker.internal:8090",
           "https://host.docker.internal:8090",
-          "https://smartseller-api.preproduction.kirimku.com",
           "https://*.kirimku.com"
         ],
       }
@@ -121,6 +119,6 @@ app.use((err, req, res, next) => {
 
 app.listen(PORT, () => {
   console.log(`SmartSeller Frontend server running on port ${PORT}`);
-  console.log(`Backend API expected at: http://localhost:8090`);
+  console.log(`Backend API expected at: https://smartseller-api.preproduction.kirimku.com`);
   console.log(`Health check available at: http://localhost:${PORT}/health`);
 });

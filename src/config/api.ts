@@ -13,7 +13,7 @@ export interface ApiConfig {
  * Default API Configuration
  */
 export const DEFAULT_API_CONFIG: ApiConfig = {
-  baseURL: ((import.meta as unknown as { env?: Record<string, string> }).env?.DEV ? '' : (import.meta.env.VITE_BACKEND_HOST || import.meta.env.VITE_API_BASE_URL || 'http://localhost:8090')) + '/api/v1',
+  baseURL: ((import.meta as unknown as { env?: Record<string, string> }).env?.DEV ? '' : (import.meta.env.VITE_BACKEND_HOST || import.meta.env.VITE_API_BASE_URL || 'https://smartseller-api.preproduction.kirimku.com')) + '/api/v1',
   timeout: 30000,
 };
 
