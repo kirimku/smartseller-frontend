@@ -270,6 +270,11 @@ export default function WarrantyProgram() {
     notes: "",
     reason: ""
   });
+  const [startRepairForm, setStartRepairForm] = useState({
+    notes: "",
+    repairNotes: ""
+  });
+  const [repairingClaims, setRepairingClaims] = useState(new Set<string>());
 
   // Test function for debugging API calls
   const testApiCall = async () => {
@@ -470,6 +475,7 @@ export default function WarrantyProgram() {
       case 'rejected':
       case 'shipped':
       case 'repaired':
+      case 'in_repair':
         return s as ClaimStatus;
       case 'in_progress':
         return 'in_repair';
@@ -629,6 +635,38 @@ export default function WarrantyProgram() {
         const newSet = new Set(prev);
         newSet.delete(claimId);
         return newSet;
+      });
+    }
+  };
+
+  const transitionToInRepair = async (claimId: string, notes: string, repairNotes: string) => {
+    setRepairingClaims(prev => new Set(prev).add(claimId));
+    try {
+      const payload = {
+        status: 'in_repair',
+        notes: notes || 'Starting repair via admin UI',
+        repair_notes: repairNotes || 'Repair initiated'
+      };
+
+      await enhancedApiClient.getClient().put({
+        url: `/api/v1/admin/warranty/claims/${claimId}/status`,
+        body: payload,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      await loadClaims();
+      setIsClaimDialogOpen(false);
+      setStartRepairForm({ notes: "", repairNotes: "" });
+      console.log('Claim transitioned to in_repair successfully');
+    } catch (error) {
+      console.error('Error updating claim status to in_repair:', error);
+    } finally {
+      setRepairingClaims(prev => {
+        const next = new Set(prev);
+        next.delete(claimId);
+        return next;
       });
     }
   };
@@ -984,7 +1022,7 @@ export default function WarrantyProgram() {
                                       size="sm"
                                       onClick={() => validateClaim(claim.id, false, "Invalid warranty claim")}
                                       disabled={validatingClaims.has(claim.id)}
-                                      className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                                      className="h-8 w-8 p-0 text-red-600 hover:text-red-600"
                                     >
                                       {validatingClaims.has(claim.id) ? (
                                         <RefreshCw className="h-4 w-4 animate-spin" />
@@ -1244,14 +1282,35 @@ export default function WarrantyProgram() {
                   )}
 
                 {selectedClaim.status === "validated" && (
-                  <div className="flex gap-3">
-                    <Button
-                      onClick={() => updateClaimStatus(selectedClaim.id, "in_repair")}
-                      className="flex items-center gap-2"
-                    >
-                      <Wrench className="h-4 w-4" />
-                      Start Repair
-                    </Button>
+                  <div className="space-y-2">
+                    <Label htmlFor="startRepairNotes">Admin Notes</Label>
+                    <Textarea
+                      id="startRepairNotes"
+                      placeholder="Add notes for starting repair..."
+                      value={startRepairForm.notes}
+                      onChange={(e) => setStartRepairForm(prev => ({ ...prev, notes: e.target.value }))}
+                    />
+                    <Label htmlFor="startRepairRepairNotes">Repair Notes</Label>
+                    <Textarea
+                      id="startRepairRepairNotes"
+                      placeholder="Describe initial repair steps..."
+                      value={startRepairForm.repairNotes}
+                      onChange={(e) => setStartRepairForm(prev => ({ ...prev, repairNotes: e.target.value }))}
+                    />
+                    <div className="flex gap-3">
+                      <Button
+                        onClick={() => transitionToInRepair(selectedClaim.id, startRepairForm.notes, startRepairForm.repairNotes)}
+                        className="flex items-center gap-2"
+                        disabled={repairingClaims.has(selectedClaim.id)}
+                      >
+                        {repairingClaims.has(selectedClaim.id) ? (
+                          <RefreshCw className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Wrench className="h-4 w-4" />
+                        )}
+                        Start Repair
+                      </Button>
+                    </div>
                   </div>
                 )}
 
