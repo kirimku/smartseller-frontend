@@ -14,7 +14,9 @@ import type { AxiosResponse, AxiosError, InternalAxiosRequestConfig } from 'axio
 import { SecureTokenManager } from './secure-token-manager';
 import { CSRFProtection } from './csrf-protection';
 
-const API_BASE_URL = import.meta.env.VITE_BACKEND_HOST || import.meta.env.VITE_API_BASE_URL || 'http://localhost:8090';
+const API_BASE_URL = (import.meta as unknown as { env?: Record<string, string> }).env?.DEV
+  ? ''
+  : (import.meta.env.VITE_BACKEND_HOST || import.meta.env.VITE_API_BASE_URL || 'http://localhost:8090');
 
 interface ExtendedAxiosRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
@@ -93,11 +95,16 @@ export class EnhancedApiClient {
           config.headers.set('Authorization', `Bearer ${token}`);
         }
 
-        // Add CSRF protection
-        const csrfHeaders = await CSRFProtection.addCSRFHeader();
-        Object.entries(csrfHeaders).forEach(([key, value]) => {
-          config.headers.set(key, value);
-        });
+        // Determine HTTP method (default to GET when unknown)
+        const method = (config.method || 'get').toUpperCase();
+
+        // Add CSRF protection ONLY for mutating methods to avoid GET preflight
+        if (method !== 'GET' && method !== 'HEAD') {
+          const csrfHeaders = await CSRFProtection.addCSRFHeader();
+          Object.entries(csrfHeaders).forEach(([key, value]) => {
+            config.headers.set(key, value);
+          });
+        }
 
         // Add tenant context header
         try {

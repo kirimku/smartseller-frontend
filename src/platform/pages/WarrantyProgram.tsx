@@ -342,7 +342,103 @@ export default function WarrantyProgram() {
   }, [claimsPage]);
 
   // API functions
-  const fetchWarrantyClaims = async (page = 1, search = '', status = 'all'): Promise<WarrantyClaimsApiResponse> => {
+  // Normalize admin claims list response into local types
+  type AdminWarrantyClaimDTO = {
+    id: string;
+    claim_number: string;
+    barcode_id: string;
+    product_name?: string;
+    customer_name?: string;
+    customer_email?: string;
+    customer_phone?: string;
+    status?: string;
+    issue_category?: string;
+    issue_description?: string;
+    created_at?: string;
+  };
+
+  type ClaimsListNormalized = {
+    claims: WarrantyClaim[];
+    meta: { page: number; page_size: number; total: number; total_pages: number };
+  };
+  
+  // Add typed envelopes to avoid any
+  type PaginationEnvelope = {
+    current_page?: number;
+    page?: number;
+    page_size?: number;
+    total_items?: number;
+    total?: number;
+    total_pages?: number;
+  };
+  type AdminClaimsEnvelope = {
+    data?: {
+      claims?: AdminWarrantyClaimDTO[];
+      items?: AdminWarrantyClaimDTO[];
+      pagination?: PaginationEnvelope;
+    };
+    items?: AdminWarrantyClaimDTO[];
+    pagination?: PaginationEnvelope;
+  };
+
+  const mapStatus = (s?: string): ClaimStatus => {
+    if (!s) return 'pending';
+    switch (s) {
+      case 'pending':
+      case 'validated':
+      case 'completed':
+      case 'rejected':
+      case 'shipped':
+      case 'repaired':
+        return s as ClaimStatus;
+      case 'in_progress':
+        return 'in_repair';
+      case 'cancelled':
+        return 'rejected';
+      default:
+        return 'pending';
+    }
+  };
+
+  const mapAdminClaimToLocal = (dto: AdminWarrantyClaimDTO): WarrantyClaim => {
+    return {
+      id: dto.id,
+      barcodeId: dto.barcode_id,
+      claimNumber: dto.claim_number,
+      customerId: '', // not provided in DTO
+      customerName: dto.customer_name || '',
+      customerEmail: dto.customer_email || '',
+      customerPhone: dto.customer_phone || '',
+      productId: '', // not provided in DTO
+      productName: dto.product_name || '',
+      issueDescription: dto.issue_description || '',
+      issueCategory: dto.issue_category || '',
+      purchaseDate: '', // not provided in DTO
+      claimDate: dto.created_at || new Date().toISOString(),
+      status: mapStatus(dto.status),
+      validatedBy: undefined,
+      validatedAt: undefined,
+      rejectionReason: undefined,
+      repairNotes: undefined,
+      estimatedRepairTime: undefined,
+      shippingTrackingNumber: undefined,
+      photos: [],
+      attachments: [],
+    };
+  };
+
+  const normalizeClaimsResponse = (resp: AdminClaimsEnvelope): ClaimsListNormalized => {
+    const items = resp?.data?.claims ?? resp?.data?.items ?? resp?.items ?? resp?.data ?? [];
+    const claims = Array.isArray(items) ? items.map(mapAdminClaimToLocal) : [];
+    const p = resp?.data?.pagination ?? resp?.pagination ?? {};
+    const page = Number(p?.current_page ?? p?.page ?? 1);
+    const page_size = Number(p?.page_size ?? 10);
+    const total = Number(p?.total_items ?? p?.total ?? claims.length);
+    const total_pages = Number(p?.total_pages ?? Math.ceil(total / page_size));
+    return { claims, meta: { page, page_size, total, total_pages } };
+  };
+
+  const fetchWarrantyClaims = async (page = 1, search = '', status = 'all'): Promise<ClaimsListNormalized> => {
     try {
       console.log('Fetching warranty claims...', { page, search, status });
       
@@ -364,7 +460,7 @@ export default function WarrantyProgram() {
       });
       console.log('API Response:', response);
       
-      return response.data as WarrantyClaimsApiResponse;
+      return normalizeClaimsResponse(response.data);
     } catch (error) {
       console.error('Error fetching warranty claims:', error);
       throw error;
@@ -376,16 +472,9 @@ export default function WarrantyProgram() {
     setClaimsError(null);
     
     try {
-      const data = await fetchWarrantyClaims(claimsPage, searchTerm, statusFilter);
-      
-      // Adjust these based on your actual API response structure
-      setWarrantyClaims(data.data || data.items || []);
-      setClaimsMeta({
-        page: data.page || claimsPage,
-        page_size: data.page_size || 10,
-        total: data.total || 0,
-        total_pages: data.total_pages || Math.ceil((data.total || 0) / 10)
-      });
+      const { claims, meta } = await fetchWarrantyClaims(claimsPage, searchTerm, statusFilter);
+      setWarrantyClaims(Array.isArray(claims) ? claims : []);
+      setClaimsMeta(meta);
     } catch (error) {
       setClaimsError(error instanceof Error ? error.message : 'Failed to load warranty claims');
       setWarrantyClaims([]);
@@ -472,21 +561,24 @@ export default function WarrantyProgram() {
   };
 
   // Filter claims based on search and status
-  const filteredClaims = warrantyClaims.filter(claim => {
-    const matchesSearch = claim.claimNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         claim.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         claim.productName.toLowerCase().includes(searchTerm.toLowerCase());
+  const claimsArray = Array.isArray(warrantyClaims) ? warrantyClaims : [];
+  const filteredClaims = claimsArray.filter((claim) => {
+    const q = searchTerm.toLowerCase();
+    const matchesSearch =
+      claim.claimNumber.toLowerCase().includes(q) ||
+      claim.customerName.toLowerCase().includes(q) ||
+      claim.productName.toLowerCase().includes(q);
     const matchesStatus = statusFilter === "all" || claim.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
   // Calculate statistics
   const totalBarcodes = warrantyBarcodes.length;
-  const activeBarcodes = warrantyBarcodes.filter(b => b.status === "active").length;
-  const usedBarcodes = warrantyBarcodes.filter(b => b.isUsed).length;
-  const totalClaims = warrantyClaims.length;
-  const pendingClaims = warrantyClaims.filter(c => c.status === "pending").length;
-  const completedClaims = warrantyClaims.filter(c => c.status === "completed").length;
+  const activeBarcodes = warrantyBarcodes.filter((b) => b.status === "active").length;
+  const usedBarcodes = warrantyBarcodes.filter((b) => b.isUsed).length;
+  const totalClaims = claimsArray.length;
+  const pendingClaims = claimsArray.filter((c) => c.status === "pending").length;
+  const completedClaims = claimsArray.filter((c) => c.status === "completed").length;
 
   return (
     <div className="container mx-auto p-6 space-y-6">

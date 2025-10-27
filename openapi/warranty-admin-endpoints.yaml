@@ -59,6 +59,31 @@ paths:
           schema:
             type: string
             format: date-time
+        - name: severity
+          in: query
+          description: Filter by claim severity
+          schema:
+            type: string
+            enum: [low, medium, high, critical]
+        - name: sort_by
+          in: query
+          description: Sort claims by field
+          schema:
+            type: string
+            enum: [created_at, updated_at, priority, status, severity]
+            default: created_at
+        - name: sort_order
+          in: query
+          description: Sort order
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+        - name: search
+          in: query
+          description: Search in claim number, customer name, or issue description
+          schema:
+            type: string
       responses:
         '200':
           description: Warranty barcodes retrieved successfully
@@ -456,7 +481,7 @@ paths:
       tags:
         - Admin Warranty Management
       summary: Approve warranty registration
-      description: Approve a warranty barcode registration, transitioning it from waiting_approval to activated status
+      description: Approve a warranty barcode registration, transitioning it from waiting_approval to activated status. Optionally correct the purchase date to recalculate warranty expiry period.
       security:
         - BearerAuth: []
       parameters:
@@ -478,6 +503,11 @@ paths:
                   type: string
                   description: Reason for approving the warranty registration
                   example: "Customer registration verified and product authenticity confirmed"
+                purchase_date:
+                  type: string
+                  format: date
+                  description: Optional purchase date to correct the warranty period calculation (YYYY-MM-DD format)
+                  example: "2024-12-15"
               required:
                 - approval_reason
       responses:
@@ -545,7 +575,7 @@ paths:
       tags:
         - Admin Warranty Management
       summary: List warranties pending approval
-      description: Retrieve a paginated list of activated warranty barcodes that are pending admin approval for claims
+      description: Retrieve a paginated list of warranty barcodes in waiting_approval status (customer registered, waiting admin approval)
       security:
         - BearerAuth: []
       parameters:
@@ -696,25 +726,136 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  message:
-                    type: string
-                    example: "Warranty claims retrieved successfully"
-                  data:
-                    type: object
-                    properties:
+                $ref: '#/components/schemas/WarrantyClaimListResponse'
+              examples:
+                basic_listing:
+                  summary: Basic listing without filters
+                  value:
+                    success: true
+                    message: "Warranty claims retrieved successfully"
+                    data:
                       claims:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/WarrantyClaimDTO'
+                        - id: "123e4567-e89b-12d3-a456-426614174000"
+                          claim_number: "WC-2023-001234"
+                          warranty_id: "WB-2023-ABC123DEF456"
+                          customer_name: "John Doe"
+                          customer_email: "john.doe@example.com"
+                          customer_phone: "+6281234567890"
+                          status: "pending"
+                          priority: "medium"
+                          severity: "medium"
+                          issue_type: "defective"
+                          issue_description: "Screen flickering and touch not responsive"
+                          assigned_to: null
+                          assigned_to_name: null
+                          estimated_completion: null
+                          created_at: "2023-12-01T10:00:00Z"
+                          updated_at: "2023-12-01T10:00:00Z"
+                        - id: "456e7890-e89b-12d3-a456-426614174001"
+                          claim_number: "WC-2023-001235"
+                          warranty_id: "WB-2023-XYZ789GHI012"
+                          customer_name: "Jane Smith"
+                          customer_email: "jane.smith@example.com"
+                          customer_phone: "+6281234567891"
+                          status: "in_progress"
+                          priority: "high"
+                          severity: "high"
+                          issue_type: "malfunction"
+                          issue_description: "Device not turning on"
+                          assigned_to: "789e0123-e89b-12d3-a456-426614174002"
+                          assigned_to_name: "Tech Support Team"
+                          estimated_completion: "2023-12-15T10:00:00Z"
+                          created_at: "2023-11-28T14:30:00Z"
+                          updated_at: "2023-12-01T09:15:00Z"
                       pagination:
-                        $ref: '#/components/schemas/PaginationMeta'
+                        current_page: 1
+                        page_size: 20
+                        total_items: 150
+                        total_pages: 8
+                        has_next: true
+                        has_previous: false
+                        next_page: 2
+                        previous_page: null
                       statistics:
-                        $ref: '#/components/schemas/ClaimStatistics'
+                        total_claims: 150
+                        pending_claims: 25
+                        in_progress_claims: 30
+                        completed_claims: 85
+                        rejected_claims: 10
+                        average_resolution_time_hours: 48.5
+                        claims_by_priority:
+                          low: 40
+                          medium: 60
+                          high: 35
+                          urgent: 15
+                        claims_by_severity:
+                          low: 50
+                          medium: 70
+                          high: 25
+                          critical: 5
+                      filters:
+                        applied_filters: {}
+                        available_filters:
+                          statuses: ["pending", "validated", "in_progress", "completed", "rejected", "cancelled"]
+                          priorities: ["low", "medium", "high", "urgent"]
+                          severities: ["low", "medium", "high", "critical"]
+                filtered_listing:
+                  summary: Filtered listing with status and priority filters
+                  value:
+                    success: true
+                    message: "Warranty claims retrieved successfully"
+                    data:
+                      claims:
+                        - id: "123e4567-e89b-12d3-a456-426614174000"
+                          claim_number: "WC-2023-001234"
+                          warranty_id: "WB-2023-ABC123DEF456"
+                          customer_name: "John Doe"
+                          customer_email: "john.doe@example.com"
+                          customer_phone: "+6281234567890"
+                          status: "pending"
+                          priority: "medium"
+                          severity: "medium"
+                          issue_type: "defective"
+                          issue_description: "Screen flickering and touch not responsive"
+                          assigned_to: null
+                          assigned_to_name: null
+                          estimated_completion: null
+                          created_at: "2023-12-01T10:00:00Z"
+                          updated_at: "2023-12-01T10:00:00Z"
+                      pagination:
+                        current_page: 1
+                        page_size: 5
+                        total_items: 12
+                        total_pages: 3
+                        has_next: true
+                        has_previous: false
+                        next_page: 2
+                        previous_page: null
+                      statistics:
+                        total_claims: 12
+                        pending_claims: 12
+                        in_progress_claims: 0
+                        completed_claims: 0
+                        rejected_claims: 0
+                        average_resolution_time_hours: 0
+                        claims_by_priority:
+                          low: 0
+                          medium: 12
+                          high: 0
+                          urgent: 0
+                        claims_by_severity:
+                          low: 0
+                          medium: 12
+                          high: 0
+                          critical: 0
+                      filters:
+                        applied_filters:
+                          status: "pending"
+                          priority: "medium"
+                        available_filters:
+                          statuses: ["pending", "validated", "in_progress", "completed", "rejected", "cancelled"]
+                          priorities: ["low", "medium", "high", "urgent"]
+                          severities: ["low", "medium", "high", "critical"]
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -1396,6 +1537,32 @@ components:
           format: date-time
           nullable: true
           example: "2024-12-01T10:00:00Z"
+        invoice_number:
+          type: string
+          nullable: true
+          description: "Purchase invoice number"
+          example: "INV-2023-001234"
+        retailer_name:
+          type: string
+          nullable: true
+          description: "Name of the retailer where product was purchased"
+          example: "TechStore Jakarta"
+        retailer_address:
+          type: string
+          nullable: true
+          description: "Address of the retailer where product was purchased"
+          example: "Jl. Sudirman No. 123, Jakarta"
+        purchase_date:
+          type: string
+          format: date
+          nullable: true
+          description: "Date when the product was purchased"
+          example: "2023-11-15"
+        proof_of_purchase_url:
+          type: string
+          nullable: true
+          description: "R2 storage URL for the proof of purchase document"
+          example: "https://r2.smartseller.com/warranty-proofs/storefront-123/proof-456.pdf"
         created_at:
           type: string
           format: date-time

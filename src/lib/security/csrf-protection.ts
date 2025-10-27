@@ -245,12 +245,16 @@ export class CSRFProtection {
       return fetch(url, options);
     }
 
-    // Add CSRF token to headers
+    // Determine method and apply CSRF only for mutating requests
+    const method = (options.method || 'GET').toUpperCase();
+
+    // Add CSRF token to headers for non-GET/HEAD
     const headers = new Headers(options.headers);
-    const token = await this.getCSRFToken();
-    
-    if (token) {
-      headers.set('X-CSRF-Token', token);
+    if (method !== 'GET' && method !== 'HEAD') {
+      const token = await this.getCSRFToken();
+      if (token) {
+        headers.set('X-CSRF-Token', token);
+      }
     }
 
     // Ensure credentials are included for CSRF protection
@@ -265,15 +269,15 @@ export class CSRFProtection {
     // Check if CSRF token was rejected
     if (response.status === 403) {
       const responseData = await response.clone().json().catch(() => ({}));
-      if (responseData.error === 'csrf_token_invalid') {
+      if ((responseData as { error?: string }).error === 'csrf_token_invalid') {
         console.warn('⚠️ CSRF token rejected, refreshing and retrying...');
         
         // Clear invalid token and get new one
         this.clearCSRFToken();
         const newToken = await this.fetchNewCSRFToken();
         
-        if (newToken) {
-          // Retry request with new token
+        if (newToken && method !== 'GET' && method !== 'HEAD') {
+          // Retry request with new token for mutating request
           headers.set('X-CSRF-Token', newToken);
           return fetch(url, { ...secureOptions, headers });
         }

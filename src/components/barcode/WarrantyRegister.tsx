@@ -8,6 +8,9 @@ import { Alert, AlertDescription } from '../ui/alert';
 import { Search, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { useToast } from '../../hooks/use-toast';
 import { enhancedApiClient } from '../../lib/security/enhanced-api-client';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../ui/dialog';
+import { Label } from '../ui/label';
+import { Textarea } from '../ui/textarea';
 
 interface ApiPendingRegistration {
   id: string;
@@ -54,6 +57,10 @@ export const WarrantyRegister: React.FC = () => {
   const [pagination, setPagination] = useState<PaginationInfo | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const { toast } = useToast();
+  const [approveOpen, setApproveOpen] = useState(false);
+  const [approveItemId, setApproveItemId] = useState<string | null>(null);
+  const [approveReason, setApproveReason] = useState('');
+  const [approvePurchaseDate, setApprovePurchaseDate] = useState('');
 
   // Helpers for safe API typing and error messages
   type ApiBaseResponse = { success?: boolean; message?: string };
@@ -125,12 +132,19 @@ export const WarrantyRegister: React.FC = () => {
     }
   };
 
-  const approveRegistration = async (id: string) => {
+  const openApproveDialog = (id: string) => {
+    setApproveItemId(id);
+    setApproveReason('');
+    setApprovePurchaseDate('');
+    setApproveOpen(true);
+  };
+
+  const approveRegistration = async (id: string, approval_reason: string, purchase_date: string) => {
     setActionLoading(id);
     try {
       const response = await enhancedApiClient.getClient().post({
         url: `/api/v1/admin/warranty/barcodes/${encodeURIComponent(id)}/approve-registration`,
-        body: {},
+        body: { approval_reason, purchase_date },
       });
       const data = response.data as unknown;
       const isOk = !(
@@ -140,6 +154,10 @@ export const WarrantyRegister: React.FC = () => {
       );
       if (isOk) {
         toast({ title: 'Approved', description: 'Registration approved and activated.' });
+        setApproveOpen(false);
+        setApproveItemId(null);
+        setApproveReason('');
+        setApprovePurchaseDate('');
         await fetchPendingRegistrations();
       } else {
         const msg =
@@ -200,6 +218,19 @@ export const WarrantyRegister: React.FC = () => {
     e.preventDefault();
     setCurrentPage(1);
     fetchPendingRegistrations();
+  };
+
+  const submitApprove = async () => {
+    if (!approveItemId) return;
+    if (!approveReason.trim()) {
+      toast({ title: 'Reason required', description: 'Please provide an approval reason.', variant: 'destructive' });
+      return;
+    }
+    if (!approvePurchaseDate) {
+      toast({ title: 'Purchase date required', description: 'Please select the purchase date.', variant: 'destructive' });
+      return;
+    }
+    await approveRegistration(approveItemId, approveReason.trim(), approvePurchaseDate);
   };
 
   return (
@@ -279,7 +310,7 @@ export const WarrantyRegister: React.FC = () => {
                     <div className="flex items-center justify-end gap-2">
                       <Button
                         size="sm"
-                        onClick={() => approveRegistration(item.id)}
+                        onClick={() => openApproveDialog(item.id)}
                         disabled={actionLoading === item.id}
                         className="flex items-center gap-1"
                       >
@@ -344,6 +375,59 @@ export const WarrantyRegister: React.FC = () => {
             </div>
           </div>
         )}
+
+        {/* Approve Modal */}
+        <Dialog open={approveOpen} onOpenChange={(open) => { setApproveOpen(open); if (!open) { setApproveItemId(null); } }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Approve Registration</DialogTitle>
+              <DialogDescription>
+                Provide an approval reason and the purchase date to approve this registration.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-2">
+              <div className="grid gap-2">
+                <Label htmlFor="approve-reason">Approval Reason</Label>
+                <Textarea
+                  id="approve-reason"
+                  placeholder="e.g., Valid receipt provided"
+                  value={approveReason}
+                  onChange={(e) => setApproveReason(e.target.value)}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="purchase-date">Purchase Date</Label>
+                <Input
+                  id="purchase-date"
+                  type="date"
+                  value={approvePurchaseDate}
+                  onChange={(e) => setApprovePurchaseDate(e.target.value)}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setApproveOpen(false)}
+                disabled={actionLoading === approveItemId}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={submitApprove}
+                disabled={actionLoading === approveItemId || !approveReason.trim() || !approvePurchaseDate}
+                className="flex items-center gap-1"
+              >
+                {actionLoading === approveItemId ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <CheckCircle className="h-4 w-4" />
+                )}
+                Confirm Approve
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );

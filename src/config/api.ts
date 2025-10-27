@@ -13,7 +13,7 @@ export interface ApiConfig {
  * Default API Configuration
  */
 export const DEFAULT_API_CONFIG: ApiConfig = {
-  baseURL: (import.meta.env.VITE_BACKEND_HOST || import.meta.env.VITE_API_BASE_URL || 'http://localhost:8090') + '/api/v1',
+  baseURL: ((import.meta as unknown as { env?: Record<string, string> }).env?.DEV ? '' : (import.meta.env.VITE_BACKEND_HOST || import.meta.env.VITE_API_BASE_URL || 'http://localhost:8090')) + '/api/v1',
   timeout: 30000,
 };
 
@@ -89,9 +89,14 @@ export class SimpleHttpClient implements HttpClient {
     const fullUrl = `${this.config.baseURL}${url}`;
     
     // Prepare headers
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
+    const headers: Record<string, string> = {};
+
+    // Only set Content-Type for requests with a body
+    const upperMethod = method.toUpperCase();
+    const hasBody = !!data && upperMethod !== 'GET' && upperMethod !== 'HEAD';
+    if (hasBody) {
+      headers['Content-Type'] = 'application/json';
+    }
 
     // Add Authorization header if token is available
     const accessToken = SecureTokenManager.getAccessToken();
@@ -114,17 +119,34 @@ export class SimpleHttpClient implements HttpClient {
       console.warn('⚠️ No access token found for API request');
     }
 
-    // Add CSRF token if available
+    // Add CSRF token only for mutating methods
     const csrfToken = SecureTokenManager.getCSRFToken();
-    if (csrfToken) {
+    if (csrfToken && upperMethod !== 'GET' && upperMethod !== 'HEAD') {
       headers['X-CSRF-Token'] = csrfToken;
       console.log('🛡️ Adding CSRF token:', csrfToken.substring(0, 10) + '...');
+    }
+
+    // Add tenant header if available
+    try {
+      const envTenantId = (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_TENANT_ID
+        || (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_TENANT_SLUG;
+      const storageTenantId = typeof window !== 'undefined'
+        ? (localStorage.getItem('current-tenant') ||
+           localStorage.getItem('tenant_id') ||
+           localStorage.getItem('smartseller_tenant_id'))
+        : null;
+      const tenantId = storageTenantId || envTenantId;
+      if (tenantId) {
+        headers['X-Tenant-ID'] = tenantId;
+      }
+    } catch (_) {
+      // ignore
     }
 
     const requestOptions = {
       method,
       headers,
-      body: data ? JSON.stringify(data) : undefined,
+      body: hasBody ? JSON.stringify(data) : undefined,
       credentials: 'include' as RequestCredentials, // Include cookies for secure mode
     };
 
@@ -132,7 +154,7 @@ export class SimpleHttpClient implements HttpClient {
       url: fullUrl,
       method,
       headers: { ...headers, Authorization: headers.Authorization ? 'Bearer [REDACTED]' : undefined },
-      hasBody: !!data,
+      hasBody,
       credentials: requestOptions.credentials
     });
 

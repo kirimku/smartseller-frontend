@@ -163,6 +163,15 @@ export default defineConfig(({ mode }) => {
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',
         'Expires': '0'
+      },
+      // Dev proxy to backend to avoid CORS
+      proxy: {
+        '/api': {
+          target: env.VITE_BACKEND_HOST || env.VITE_API_BASE_URL || 'http://localhost:8090',
+          changeOrigin: true,
+          secure: false,
+          ws: true
+        }
       }
     },
     build: {
