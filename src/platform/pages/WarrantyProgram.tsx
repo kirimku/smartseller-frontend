@@ -394,7 +394,7 @@ export default function WarrantyProgram() {
           throw new Error('Product ID not available for this claim');
         }
 
-        const product = await productService.getProductWithDetails(pid, ['variants', 'category', 'images']);
+        const product = await productService.getProductWithDetails(pid, ['variant']);
         if (!cancelled) {
           setProductDetails(product);
         }
