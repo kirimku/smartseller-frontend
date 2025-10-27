@@ -261,6 +261,16 @@ export default function WarrantyProgram() {
     notes: ""
   });
 
+  // Add validation form states
+  const [approvalForm, setApprovalForm] = useState({
+    notes: "",
+    estimatedCompletion: ""
+  });
+  const [rejectionForm, setRejectionForm] = useState({
+    notes: "",
+    reason: ""
+  });
+
   // Test function for debugging API calls
   const testApiCall = async () => {
     console.log('🧪 Testing API call manually...');
@@ -573,16 +583,35 @@ export default function WarrantyProgram() {
     return new Date(dateString).toLocaleDateString('id-ID');
   };
 
-  const validateClaim = async (claimId: string, isValid: boolean, rejectionReason?: string) => {
+  const validateClaim = async (
+    claimId: string,
+    isValid: boolean,
+    rejectionReason?: string,
+    notes?: string,
+    estimatedCompletionDate?: string
+  ) => {
     setValidatingClaims(prev => new Set(prev).add(claimId));
     
     try {
+      const isoEstimate = estimatedCompletionDate
+        ? new Date(estimatedCompletionDate).toISOString().replace(/\.\d{3}Z$/, 'Z')
+        : undefined;
+
+      const payload = isValid
+        ? {
+            action: 'validate',
+            notes: notes || 'Approved via admin UI',
+            ...(isoEstimate ? { estimated_completion_date: isoEstimate } : {})
+          }
+        : {
+            action: 'reject',
+            notes: notes || 'Rejected via admin UI',
+            rejection_reason: rejectionReason || 'No reason provided'
+          };
+
       const response = await enhancedApiClient.getClient().post({
         url: `/api/v1/admin/warranty/claims/${claimId}/validate`,
-        data: {
-          is_valid: isValid,
-          reason: rejectionReason
-        }
+        body: payload
       });
       
       // Reload claims after validation
@@ -591,11 +620,9 @@ export default function WarrantyProgram() {
       // Close dialog if it's open
       setIsClaimDialogOpen(false);
       
-      // You can add toast notification here if available
       console.log(`Claim ${isValid ? 'approved' : 'rejected'} successfully`);
     } catch (error) {
       console.error('Error validating claim:', error);
-      // You can add toast notification here if available
       console.error(error instanceof Error ? error.message : 'Failed to validate claim');
     } finally {
       setValidatingClaims(prev => {
@@ -1147,74 +1174,124 @@ export default function WarrantyProgram() {
                 </h3>
                 <div className="space-y-4">
                   {selectedClaim.status === "pending" && (
-                    <div className="flex gap-3">
-                      <Button
-                        onClick={() => validateClaim(selectedClaim.id, true)}
-                        className="flex items-center gap-2"
-                      >
-                        <Check className="h-4 w-4" />
-                        Validate Claim
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        onClick={() => validateClaim(selectedClaim.id, false, "Invalid warranty claim")}
-                        className="flex items-center gap-2"
-                      >
-                        <X className="h-4 w-4" />
-                        Reject Claim
-                      </Button>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Approval Section */}
+                      <div className="space-y-2">
+                        <Label htmlFor="approvalNotes">Approval Notes</Label>
+                        <Textarea
+                          id="approvalNotes"
+                          placeholder="Add approval notes..."
+                          value={approvalForm.notes}
+                          onChange={(e) => setApprovalForm(prev => ({ ...prev, notes: e.target.value }))}
+                        />
+                        <Label htmlFor="estimatedCompletion">Estimated Completion Date</Label>
+                        <Input
+                          id="estimatedCompletion"
+                          type="datetime-local"
+                          value={approvalForm.estimatedCompletion}
+                          onChange={(e) => setApprovalForm(prev => ({ ...prev, estimatedCompletion: e.target.value }))}
+                        />
+                        <Button
+                          onClick={() =>
+                            validateClaim(
+                              selectedClaim.id,
+                              true,
+                              undefined,
+                              approvalForm.notes,
+                              approvalForm.estimatedCompletion
+                            )
+                          }
+                          className="mt-2 flex items-center gap-2"
+                        >
+                          <Check className="h-4 w-4" />
+                          Validate Claim
+                        </Button>
+                      </div>
+
+                      {/* Rejection Section */}
+                      <div className="space-y-2">
+                        <Label htmlFor="rejectionNotes">Rejection Notes</Label>
+                        <Textarea
+                          id="rejectionNotes"
+                          placeholder="Add rejection notes..."
+                          value={rejectionForm.notes}
+                          onChange={(e) => setRejectionForm(prev => ({ ...prev, notes: e.target.value }))}
+                        />
+                        <Label htmlFor="rejectionReason">Rejection Reason</Label>
+                        <Input
+                          id="rejectionReason"
+                          placeholder="Enter rejection reason..."
+                          value={rejectionForm.reason}
+                          onChange={(e) => setRejectionForm(prev => ({ ...prev, reason: e.target.value }))}
+                        />
+                        <Button
+                          variant="destructive"
+                          onClick={() =>
+                            validateClaim(
+                              selectedClaim.id,
+                              false,
+                              rejectionForm.reason,
+                              rejectionForm.notes
+                            )
+                          }
+                          className="mt-2 flex items-center gap-2"
+                        >
+                          <X className="h-4 w-4" />
+                          Reject Claim
+                        </Button>
+                      </div>
                     </div>
                   )}
 
-                  {selectedClaim.status === "validated" && (
-                    <div className="flex gap-3">
-                      <Button
-                        onClick={() => updateClaimStatus(selectedClaim.id, "in_repair")}
-                        className="flex items-center gap-2"
-                      >
-                        <Wrench className="h-4 w-4" />
-                        Start Repair
-                      </Button>
-                    </div>
-                  )}
+                {selectedClaim.status === "validated" && (
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={() => updateClaimStatus(selectedClaim.id, "in_repair")}
+                      className="flex items-center gap-2"
+                    >
+                      <Wrench className="h-4 w-4" />
+                      Start Repair
+                    </Button>
+                  </div>
+                )}
 
-                  {selectedClaim.status === "in_repair" && (
-                    <div className="flex gap-3">
-                      <Button
-                        onClick={() => updateClaimStatus(selectedClaim.id, "repaired")}
-                        className="flex items-center gap-2"
-                      >
-                        <CheckSquare className="h-4 w-4" />
-                        Mark as Repaired
-                      </Button>
-                    </div>
-                  )}
+                {selectedClaim.status === "in_repair" && (
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={() => updateClaimStatus(selectedClaim.id, "repaired")}
+                      className="flex items-center gap-2"
+                    >
+                      <CheckSquare className="h-4 w-4" />
+                      Mark as Repaired
+                    </Button>
+                  </div>
+                )}
 
-                  {selectedClaim.status === "repaired" && (
-                    <div className="flex gap-3">
-                      <Button
-                        onClick={() => {
-                          setIsShippingDialogOpen(true);
-                        }}
-                        className="flex items-center gap-2"
-                      >
-                        <Send className="h-4 w-4" />
-                        Ship Back to Customer
-                      </Button>
-                    </div>
-                  )}
+                {selectedClaim.status === "repaired" && (
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={() => {
+                        setIsShippingDialogOpen(true);
+                      }}
+                      className="flex items-center gap-2"
+                    >
+                      <Send className="h-4 w-4" />
+                      Ship Back to Customer
+                    </Button>
+                  </div>
+                )}
 
-                  {selectedClaim.status === "shipped" && (
-                    <div className="flex gap-3">
-                      <Button
-                        onClick={() => updateClaimStatus(selectedClaim.id, "completed")}
-                        className="flex items-center gap-2"
-                      >
-                        <CheckCircle className="h-4 w-4" />
-                        Mark as Completed
-                      </Button>
-                    </div>
-                  )}
+                {selectedClaim.status === "shipped" && (
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={() => updateClaimStatus(selectedClaim.id, "completed")}
+                      className="flex items-center gap-2"
+                    >
+                      <CheckCircle className="h-4 w-4" />
+                      Mark as Completed
+                    </Button>
+                  </div>
+                )}
                 </div>
 
                 {/* Repair Notes */}
