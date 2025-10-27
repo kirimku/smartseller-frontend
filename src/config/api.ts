@@ -1,4 +1,5 @@
 import type { ApiResponse, ApiError } from '../shared/types';
+import { SecureTokenManager } from '../lib/security/secure-token-manager';
 
 /**
  * API Configuration
@@ -12,7 +13,7 @@ export interface ApiConfig {
  * Default API Configuration
  */
 export const DEFAULT_API_CONFIG: ApiConfig = {
-  baseURL: (import.meta.env.VITE_BACKEND_HOST || import.meta.env.VITE_API_BASE_URL || 'http://localhost:8090') + '/api/v1',
+  baseURL: ((import.meta as unknown as { env?: Record<string, string> }).env?.DEV ? '' : (import.meta.env.VITE_BACKEND_HOST || import.meta.env.VITE_API_BASE_URL || 'http://localhost:8090')) + '/api/v1',
   timeout: 30000,
 };
 
@@ -87,21 +88,107 @@ export class SimpleHttpClient implements HttpClient {
   ): Promise<ApiResponse<T>> {
     const fullUrl = `${this.config.baseURL}${url}`;
     
+    // Prepare headers
+    const headers: Record<string, string> = {};
+
+    // Only set Content-Type for requests with a body
+    const upperMethod = method.toUpperCase();
+    const hasBody = !!data && upperMethod !== 'GET' && upperMethod !== 'HEAD';
+    if (hasBody) {
+      headers['Content-Type'] = 'application/json';
+    }
+
+    // Add Authorization header if token is available
+    const accessToken = SecureTokenManager.getAccessToken();
+    const isSecureMode = SecureTokenManager.isSecureMode();
+    const isAuthenticated = SecureTokenManager.isAuthenticated();
+    
+    console.log('🔍 Token Manager Status:', {
+      isSecureMode,
+      isAuthenticated,
+      hasAccessToken: !!accessToken,
+      accessTokenLength: accessToken?.length || 0
+    });
+    
+    if (accessToken) {
+      headers['Authorization'] = `Bearer ${accessToken}`;
+      console.log('🔑 Adding Authorization header with token:', accessToken.substring(0, 20) + '...');
+    } else if (isSecureMode) {
+      console.log('🍪 Secure mode enabled - relying on httpOnly cookies for authentication');
+    } else {
+      console.warn('⚠️ No access token found for API request');
+    }
+
+    // Add CSRF token only for mutating methods
+    const csrfToken = SecureTokenManager.getCSRFToken();
+    if (csrfToken && upperMethod !== 'GET' && upperMethod !== 'HEAD') {
+      headers['X-CSRF-Token'] = csrfToken;
+      console.log('🛡️ Adding CSRF token:', csrfToken.substring(0, 10) + '...');
+    }
+
+    // Add tenant header if available
     try {
-      const response = await fetch(fullUrl, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: data ? JSON.stringify(data) : undefined,
+      const envTenantId = (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_TENANT_ID
+        || (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_TENANT_SLUG;
+      const storageTenantId = typeof window !== 'undefined'
+        ? (localStorage.getItem('current-tenant') ||
+           localStorage.getItem('tenant_id') ||
+           localStorage.getItem('smartseller_tenant_id'))
+        : null;
+      const tenantId = storageTenantId || envTenantId;
+      if (tenantId) {
+        headers['X-Tenant-ID'] = tenantId;
+      }
+    } catch (_) {
+      // ignore
+    }
+
+    const requestOptions = {
+      method,
+      headers,
+      body: hasBody ? JSON.stringify(data) : undefined,
+      credentials: 'include' as RequestCredentials, // Include cookies for secure mode
+    };
+
+    console.log('🚀 Making API request:', {
+      url: fullUrl,
+      method,
+      headers: { ...headers, Authorization: headers.Authorization ? 'Bearer [REDACTED]' : undefined },
+      hasBody,
+      credentials: requestOptions.credentials
+    });
+
+    console.log('📋 Full fetch configuration:', {
+      url: fullUrl,
+      options: {
+        ...requestOptions,
+        headers: { ...headers, Authorization: headers.Authorization ? 'Bearer [REDACTED]' : undefined }
+      }
+    });
+    
+    try {
+      const response = await fetch(fullUrl, requestOptions);
+
+      console.log('📡 API response received:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+        headers: Object.fromEntries(response.headers.entries())
       });
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      return await response.json();
+      const responseData = await response.json();
+      console.log('✅ API response data:', responseData);
+      return responseData;
     } catch (error) {
+      console.error('❌ API request failed:', {
+        url: fullUrl,
+        method,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
       throw {
         message: error instanceof Error ? error.message : 'Unknown error',
         code: 'REQUEST_FAILED',

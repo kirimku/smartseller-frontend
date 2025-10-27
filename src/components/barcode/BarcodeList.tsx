@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Badge } from '../ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
-import { Search, Filter, Download, Eye, MoreHorizontal } from 'lucide-react';
+import { Search, Filter, Download, Eye, MoreHorizontal, QrCode, Loader2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
+import { Alert, AlertDescription } from '../ui/alert';
 import { useToast } from '../../hooks/use-toast';
 import { enhancedApiClient } from '../../lib/security/enhanced-api-client';
 
@@ -87,6 +89,15 @@ export const BarcodeList: React.FC<BarcodeListProps> = ({ onViewDetails }) => {
     has_prev: false
   });
   const { toast } = useToast();
+
+  // QR modal state
+  const [qrModalOpen, setQrModalOpen] = useState(false);
+  const [qrLoading, setQrLoading] = useState(false);
+  const [qrError, setQrError] = useState<string | null>(null);
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const [qrBarcode, setQrBarcode] = useState<string | null>(null);
+  const [qrOptions, setQrOptions] = useState<{ size: number; error_level: 'L'|'M'|'Q'|'H'; format: 'base64'|'png'; }>({ size: 256, error_level: 'M', format: 'base64' });
+  const currentQrIdRef = useRef<string | null>(null);
 
   const fetchBarcodes = async () => {
     setLoading(true);
@@ -227,6 +238,61 @@ export const BarcodeList: React.FC<BarcodeListProps> = ({ onViewDetails }) => {
     });
   };
 
+  // QR generation helpers
+  const toDataUrlFromBase64Png = (base64: string) => `data:image/png;base64,${base64}`;
+  
+  const createBlobFromBase64 = (base64: string) => {
+    const byteCharacters = atob(base64);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    return new Blob([byteArray], { type: 'image/png' });
+  };
+  
+  const openQrModal = async (b: Barcode) => {
+    setQrBarcode(b.barcode);
+    currentQrIdRef.current = b.id;
+    setQrError(null);
+    setQrDataUrl(null);
+    setQrModalOpen(true);
+    await fetchQr(b.id, qrOptions);
+  };
+  
+  const fetchQr = async (id: string, opts: { size: number; error_level: 'L'|'M'|'Q'|'H'; format: 'base64'|'png'; }) => {
+    setQrLoading(true);
+    setQrError(null);
+    try {
+      const response = await enhancedApiClient.getClient().get({
+        url: `/api/v1/admin/warranty/barcodes/${id}/qr`,
+        query: { size: opts.size, error_level: opts.error_level, format: 'base64' },
+      });
+      const root = response.data as { success?: boolean; data?: { qr_code?: string | { base64_data?: string } } };
+      const qrPayload = root?.data?.qr_code;
+      const qrBase64 = typeof qrPayload === 'string' ? qrPayload : qrPayload?.base64_data;
+      if (!qrBase64) {
+        throw new Error('QR code not returned by server');
+      }
+      setQrDataUrl(toDataUrlFromBase64Png(qrBase64));
+    } catch (e) {
+      const err = e as ApiError;
+      const msg = err?.response?.data?.message || err?.message || 'Failed to generate QR';
+      setQrError(msg);
+      toast({ title: 'Error', description: msg, variant: 'destructive' });
+    } finally {
+      setQrLoading(false);
+    }
+  };
+  
+  const updateQrOptions = async (newOpts: Partial<{ size: number; error_level: 'L'|'M'|'Q'|'H'; format: 'base64'|'png'; }>) => {
+    const merged = { ...qrOptions, ...newOpts };
+    setQrOptions(merged);
+    const id = currentQrIdRef.current;
+    if (qrModalOpen && id) {
+      await fetchQr(id, merged);
+    }
+  };
   return (
     <Card>
       <CardHeader>
@@ -344,6 +410,10 @@ export const BarcodeList: React.FC<BarcodeListProps> = ({ onViewDetails }) => {
                             <Eye className="h-4 w-4 mr-2" />
                             View Details
                           </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => openQrModal(barcode)}>
+                            <QrCode className="h-4 w-4 mr-2" />
+                            Generate QR
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -385,6 +455,94 @@ export const BarcodeList: React.FC<BarcodeListProps> = ({ onViewDetails }) => {
           </div>
         )}
       </CardContent>
+
+      {/* QR Preview Modal */}
+      <Dialog open={qrModalOpen} onOpenChange={setQrModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <QrCode className="h-5 w-5" />
+              QR Code {qrBarcode ? `for ${qrBarcode}` : ''}
+            </DialogTitle>
+          </DialogHeader>
+
+          {/* Options */}
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <div>
+              <label className="text-sm text-gray-600">Size</label>
+              <Select value={String(qrOptions.size)} onValueChange={(v) => updateQrOptions({ size: parseInt(v, 10) })}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="128">128</SelectItem>
+                  <SelectItem value="256">256</SelectItem>
+                  <SelectItem value="512">512</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm text-gray-600">Error Level</label>
+              <Select value={qrOptions.error_level} onValueChange={(v) => updateQrOptions({ error_level: v as 'L'|'M'|'Q'|'H' })}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="L">L</SelectItem>
+                  <SelectItem value="M">M</SelectItem>
+                  <SelectItem value="Q">Q</SelectItem>
+                  <SelectItem value="H">H</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {qrError && (
+            <Alert variant="destructive">
+              <AlertDescription>{qrError}</AlertDescription>
+            </Alert>
+          )}
+
+          <div className="flex flex-col items-center gap-3">
+            {qrLoading ? (
+              <div className="py-6">
+                <Loader2 className="h-6 w-6 animate-spin" />
+              </div>
+            ) : qrDataUrl ? (
+              <img src={qrDataUrl} alt="Barcode QR" className="border rounded" style={{ width: qrOptions.size, height: qrOptions.size }} />
+            ) : (
+              <div className="text-sm text-gray-500">QR not generated yet</div>
+            )}
+
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => {
+                const id = currentQrIdRef.current;
+                if (id) fetchQr(id, qrOptions);
+              }}>
+                Refresh
+              </Button>
+              <Button size="sm" onClick={downloadCurrentQr} disabled={!qrDataUrl}>
+                <Download className="h-4 w-4 mr-2" />
+                Download PNG
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
+};
+
+const downloadCurrentQr = () => {
+  if (!qrDataUrl || !qrBarcode) return;
+  const base64 = qrDataUrl.split(',')[1];
+  const blob = createBlobFromBase64(base64);
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `barcode-${qrBarcode}-qr.png`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 };

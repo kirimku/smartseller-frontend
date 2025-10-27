@@ -64,6 +64,7 @@ import {
 import { ProductFormSchema, ValidationHelpers, ValidationMessages } from '../../shared/utils/validation';
 import { productService } from '../../services/product';
 import { CategoryService } from '../../services/categoryService';
+import { imageUploadService, type ImageUploadProgress } from '../../services/image-upload';
 
 // Use the comprehensive validation schema
 const productFormSchema = ProductFormSchema;
@@ -102,6 +103,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   const [isDirty, setIsDirty] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [uploadingImages, setUploadingImages] = useState<string[]>([]);
+  const [uploadProgress, setUploadProgress] = useState<Record<string, ImageUploadProgress>>({});
   const [fieldValidationErrors, setFieldValidationErrors] = useState<Record<string, string>>({});
   
   // Category state
@@ -332,33 +334,92 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   // Handle image upload
   const handleImageUpload = useCallback(async (files: FileList) => {
     const currentImages = getValues('images') || [];
+    const fileArray = Array.from(files);
     
-    for (const file of Array.from(files)) {
-      if (!file.type.startsWith('image/')) {
-        toast.error('Please select only image files');
-        continue;
+    // Validate files before uploading
+    const validFiles = fileArray.filter(file => {
+      const validationError = imageUploadService.validateImageFile(file);
+      if (validationError) {
+        toast.error(validationError);
+        return false;
       }
+      return true;
+    });
 
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        toast.error('Image size must be less than 5MB');
-        continue;
-      }
+    if (validFiles.length === 0) {
+      return;
+    }
 
-      const imageId = `temp-${Date.now()}-${Math.random()}`;
-      setUploadingImages(prev => [...prev, imageId]);
+    // Create upload IDs and track progress
+    const uploadIds = validFiles.map(() => `upload-${Date.now()}-${Math.random()}`);
+    
+    // Add to uploading state
+    setUploadingImages(prev => [...prev, ...uploadIds]);
 
-      try {
-        // In a real app, you would upload to a file storage service
-        // For now, we'll create a temporary URL
-        const imageUrl = URL.createObjectURL(file);
+    try {
+      // Upload files with progress tracking
+      const uploadPromises = validFiles.map(async (file, index) => {
+        const uploadId = uploadIds[index];
         
-        setValue('images', [...currentImages, imageUrl], { shouldDirty: true });
-        toast.success('Image uploaded successfully');
-      } catch (error) {
-        toast.error('Failed to upload image');
-      } finally {
-        setUploadingImages(prev => prev.filter(id => id !== imageId));
+        try {
+          const result = await imageUploadService.uploadProductImage(
+            file,
+            (progress) => {
+              setUploadProgress(prev => ({
+                ...prev,
+                [uploadId]: progress
+              }));
+            }
+          );
+
+          // Clean up progress tracking
+          setUploadProgress(prev => {
+            const newProgress = { ...prev };
+            delete newProgress[uploadId];
+            return newProgress;
+          });
+
+          return result.image_url;
+        } catch (error) {
+          // Clean up progress tracking on error
+          setUploadProgress(prev => {
+            const newProgress = { ...prev };
+            delete newProgress[uploadId];
+            return newProgress;
+          });
+          
+          const errorMessage = error instanceof Error ? error.message : 'Upload failed';
+          toast.error(`Failed to upload ${file.name}: ${errorMessage}`);
+          throw error;
+        }
+      });
+
+      // Wait for all uploads to complete
+      const uploadedUrls = await Promise.allSettled(uploadPromises);
+      const successfulUrls = uploadedUrls
+        .filter((result): result is PromiseFulfilledResult<string> => result.status === 'fulfilled')
+        .map(result => result.value);
+
+      if (successfulUrls.length > 0) {
+        // Update form with new image URLs
+        setValue('images', [...currentImages, ...successfulUrls], { shouldDirty: true });
+        
+        const successCount = successfulUrls.length;
+        const totalCount = validFiles.length;
+        
+        if (successCount === totalCount) {
+          toast.success(`Successfully uploaded ${successCount} image${successCount > 1 ? 's' : ''}`);
+        } else {
+          toast.success(`Successfully uploaded ${successCount} of ${totalCount} images`);
+        }
       }
+    } catch (error) {
+      // This catch block handles any unexpected errors
+      console.error('Unexpected error during image upload:', error);
+      toast.error('An unexpected error occurred during upload');
+    } finally {
+      // Clean up uploading state
+      setUploadingImages(prev => prev.filter(id => !uploadIds.includes(id)));
     }
   }, [getValues, setValue]);
 
@@ -804,6 +865,36 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                       </p>
                     </div>
                   </div>
+
+                  {/* Upload Progress */}
+                  {uploadingImages.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-medium">Uploading Images...</h4>
+                      {uploadingImages.map((uploadId) => {
+                        const progress = uploadProgress[uploadId];
+                        return (
+                          <div key={uploadId} className="space-y-1">
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-muted-foreground">
+                                {progress ? `Uploading... ${progress.percentage}%` : 'Preparing upload...'}
+                              </span>
+                              {progress && (
+                                <span className="text-xs text-muted-foreground">
+                                  {imageUploadService.formatFileSize(progress.loaded)} / {imageUploadService.formatFileSize(progress.total)}
+                                </span>
+                              )}
+                            </div>
+                            <div className="w-full bg-muted rounded-full h-2">
+                              <div
+                                className="bg-primary h-2 rounded-full transition-all duration-300"
+                                style={{ width: `${progress?.percentage || 0}%` }}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
 
                   {/* Image Preview */}
                   {watchedImages.length > 0 && (
