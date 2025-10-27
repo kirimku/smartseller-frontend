@@ -158,7 +158,8 @@ export default function AdminProducts() {
         if (err.message.includes('Network Error') || 
             err.message.includes('ECONNREFUSED') || 
             err.message.includes('fetch')) {
-          errorMessage = 'Backend server is not available. Please ensure the API server is running on http://localhost:8090';
+          const apiBaseUrl = import.meta.env.VITE_BACKEND_HOST || import.meta.env.VITE_API_BASE_URL || 'https://smartseller-api.preproduction.kirimku.com';
+          errorMessage = `Backend server is not available. Please ensure the API server is running on ${apiBaseUrl}`;
         } else {
           errorMessage = err.message;
         }

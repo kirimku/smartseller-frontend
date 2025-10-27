@@ -41,7 +41,7 @@ export class SecureTokenManager {
   private static isSecureModeEnabled = false;
   
   // Backend URL configuration
-  private static readonly API_BASE_URL = import.meta.env.VITE_BACKEND_HOST || import.meta.env.VITE_API_BASE_URL || 'http://localhost:8090';
+  private static readonly API_BASE_URL = import.meta.env.VITE_BACKEND_HOST || import.meta.env.VITE_API_BASE_URL || 'https://smartseller-api.preproduction.kirimku.com';
 
   /**
    * Initialize secure token manager

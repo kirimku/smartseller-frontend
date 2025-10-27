@@ -16,7 +16,7 @@ import { CSRFProtection } from './csrf-protection';
 
 const API_BASE_URL = (import.meta as unknown as { env?: Record<string, string> }).env?.DEV
   ? ''
-  : (import.meta.env.VITE_BACKEND_HOST || import.meta.env.VITE_API_BASE_URL || 'http://localhost:8090');
+  : (import.meta.env.VITE_BACKEND_HOST || import.meta.env.VITE_API_BASE_URL || 'https://smartseller-api.preproduction.kirimku.com');
 
 interface ExtendedAxiosRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;

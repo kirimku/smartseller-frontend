@@ -142,7 +142,8 @@ export const ApiTestComponent: React.FC = () => {
         console.log('🧪 [ApiTest] Adding Authorization header:', `Bearer ${token.substring(0, 20)}...`);
       }
 
-      const response = await fetch('http://localhost:8090/api/v1/products?limit=10', {
+      const apiBaseUrl = import.meta.env.VITE_BACKEND_HOST || import.meta.env.VITE_API_BASE_URL || 'https://smartseller-api.preproduction.kirimku.com';
+      const response = await fetch(`${apiBaseUrl}/api/v1/products?limit=10`, {
         method: 'GET',
         headers,
       });
